@@ -1,0 +1,94 @@
+CREATE DATABASE MOVIE_RATINGS;
+
+USE MOVIE_RATINGS;
+
+SET GLOBAL local_infile = true;
+
+CREATE TABLE GENRES(
+Genre VARCHAR(255),
+Description TEXT,
+primary key(Genre));
+
+CREATE TABLE ACTORS(
+Act_id VARCHAR(255),
+Act_name VARCHAR(255),
+primary key(Act_id));
+
+CREATE TABLE DIRECTORS(
+Dir_id VARCHAR(255),
+Dir_name VARCHAR(255),
+primary key(Dir_id));
+
+CREATE TABLE LOCATIONS(
+Loc_id BIGINT,
+Loc_data1 VARCHAR(255),
+Loc_data2 VARCHAR(255),
+Loc_data3 VARCHAR(255),
+Loc_data4 VARCHAR(255),
+primary key(Loc_id));
+
+CREATE TABLE MOVIES(
+Mov_id BIGINT,
+Title VARCHAR(255),
+Year BIGINT,
+Critic_rate FLOAT,
+Aud_rate FLOAT,
+Aud_count BIGINT,
+Dir_id VARCHAR(255),
+primary key(Mov_id));
+
+CREATE TABLE USERS(
+User_id BIGINT,
+Username VARCHAR(255),
+Password VARCHAR(255),
+Fav_act VARCHAR(255),
+Fav_dir VARCHAR(255),
+Fav_genre VARCHAR(255),
+primary key(User_id));
+
+CREATE TABLE MOVIE_GENRES(
+Mov_id BIGINT,
+Genre VARCHAR(255),
+FOREIGN KEY (Mov_id) REFERENCES MOVIES(Mov_id),
+FOREIGN KEY (Genre) REFERENCES GENRES(Genre),
+primary key(Mov_id,Genre));
+
+CREATE TABLE MOVIE_ACTORS(
+Mov_id BIGINT,
+Act_id VARCHAR(255),
+Ranking BIGINT,
+FOREIGN KEY (Mov_id) REFERENCES MOVIES(Mov_id),
+FOREIGN KEY (Act_id) REFERENCES ACTORS(Act_id),
+primary key(Mov_id,Act_id));
+
+CREATE TABLE MOVIE_LOCATIONS(
+Mov_id BIGINT,
+Loc_id BIGINT,
+FOREIGN KEY (Mov_id) REFERENCES MOVIES(Mov_id),
+FOREIGN KEY (Loc_id) REFERENCES LOCATIONS(Loc_id),
+primary key(Mov_id,Loc_id));
+
+CREATE TABLE USER_RATINGS(
+User_id BIGINT,
+Mov_id BIGINT,
+Rating FLOAT,
+Time_day BIGINT,
+Time_month BIGINT,
+Time_year BIGINT,
+Time_hour BIGINT,
+Time_min BIGINT,
+Time_sec BIGINT,
+FOREIGN KEY (Mov_id) REFERENCES MOVIES(Mov_id),
+FOREIGN KEY (User_id) REFERENCES USERS(User_id),
+primary key(User_id,Mov_id));
+
+load data local infile 'c:/data/Genres.csv' into table GENRES fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Actors.csv' into table ACTORS fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Directors.csv' into table DIRECTORS fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Locations.csv' into table LOCATIONS fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Movies.csv' into table MOVIES fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Users.csv' into table USERS fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Movie_genres.csv' into table MOVIE_GENRES fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Movie_actors.csv' into table MOVIE_ACTORS fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/Movie_locations.csv' into table MOVIE_LOCATIONS fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
+load data local infile 'c:/data/User_ratings.csv' into table USER_RATINGS fields terminated by ',' lines terminated by '\r\n' IGNORE 1 LINES;
