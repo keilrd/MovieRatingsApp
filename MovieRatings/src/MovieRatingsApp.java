@@ -1,27 +1,34 @@
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Properties;
 
 
 public class MovieRatingsApp extends Application {
 	
-	String searches[] = {"Movies", "Actors", "Directors"};
+	String searches[] = {"Movie", "Actor", "Director"};
 	Connection conn;
 	boolean loggedIn = false;
 	String loggedInName = "";
 	int loggedInId = 0;
+	
+	TableView<Movie> movieTable = new TableView<Movie>();
+	ObservableList<Movie> movieData = FXCollections.observableArrayList();
 
 	public static void main(String[] args) {
 		launch(args);
@@ -138,10 +145,38 @@ public class MovieRatingsApp extends Application {
 			searchBtn
 		);
 		
+		//scrollable grid
+		ScrollPane movieGridScroll = new ScrollPane();
+		movieTable.setEditable(false);
+		movieGridScroll.setContent(movieTable);
+		TableColumn<Movie, String> mtitle = new TableColumn<Movie, String>("Title");
+		mtitle.setMinWidth(400);
+		TableColumn<Movie, Integer> myear = new TableColumn<Movie, Integer>("Year");
+		myear.setMinWidth(100);
+		TableColumn<Movie, String> director = new TableColumn<Movie, String>("Director");
+		director.setMinWidth(200);
+		TableColumn<Movie, ArrayList<String>> actors = new TableColumn<Movie, ArrayList<String>>("Actors");
+		actors.setMinWidth(495);
+				
+		mtitle.setCellValueFactory(new PropertyValueFactory<Movie, String>("mName"));
+		myear.setCellValueFactory(new PropertyValueFactory<Movie, Integer>("year"));
+		director.setCellValueFactory(new PropertyValueFactory<Movie, String>("director"));
+		actors.setCellValueFactory(new PropertyValueFactory<Movie, ArrayList<String>>("actors"));
+				
+		movieTable.setItems(movieData);
+		movieTable.getColumns().addAll(
+				mtitle,	
+				myear,
+				director,
+				actors
+		);
+		
 		parentVbox.getChildren().addAll(
 			topBar,
-			searchBar
+			searchBar,
+			movieGridScroll
 		);
+		
 		
 		
 		//button action
