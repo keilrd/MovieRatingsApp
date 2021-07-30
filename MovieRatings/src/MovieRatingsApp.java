@@ -8,6 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
+import javafx.scene.control.cell.MapValueFactory;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -16,7 +17,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 
 
 public class MovieRatingsApp extends Application {
@@ -45,9 +48,78 @@ public class MovieRatingsApp extends Application {
 	    return con;
 	}
 	
+	private ObservableList<Movie> getRandMovies() {
+		ObservableList<Movie> listMovies = FXCollections.observableArrayList();
+		Random rand = new Random();
+		String query;
+		String dirQuery;
+		String actQuery;
+		int movieId;
+		
+		while(listMovies.size() < 20) {
+		movieId = rand.nextInt(70000 - 1) + 1;
+		
+		query = "SELECT * FROM movies WHERE mov_id = " + movieId;
+		
+		try (Statement stmt = conn.createStatement()){
+			//execute query
+			ResultSet rs = stmt.executeQuery(query);
+			int mId; 
+			String mName; 
+			int year; 
+			double critRate; 
+			double audRate; 
+			int audCount;
+			String dirId;
+			String director;
+			List<String> actors = new ArrayList();
+			
+			
+			if (rs.next()) {
+				director = "";
+				
+				mId = rs.getInt("MOV_ID");
+				mName = rs.getString("TITLE");
+				year = rs.getInt("YEAR");
+				critRate = rs.getDouble("CRITIC_RATE");
+				audRate = rs.getDouble("AUD_RATE");
+				audCount = rs.getInt("AUD_COUNT");
+				dirId = rs.getString("DIR_ID");
+				
+				if (dirId.compareTo("") != 0) {
+					dirQuery = "SELECT dir_name FROM directors WHERE dir_id = '" + dirId + "'";
+					ResultSet rs2 = stmt.executeQuery(dirQuery);
+					if (rs2.next()) {
+						director = rs2.getString("DIR_NAME");
+					}
+				}
+				if (mId > 0){
+					actQuery = "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = " + mId;
+					ResultSet rs3 = stmt.executeQuery(actQuery);
+					while(rs3.next()) {
+						actors.add(rs3.getString("ACT_NAME"));
+					}
+				}
+				
+				listMovies.add(new Movie(mId, mName, year, critRate, audRate, audCount, director, actors));
+			}
+		}catch(SQLException e) {
+			System.out.println(e);
+		}
+			
+			
+				
+				//Movie(int mId, String mName, int year, double critRate, double audRate, int audCount, String director, List<String> actors)
+	}
+			
+			
+		return listMovies;
+	}
+	
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		conn = getConnection();
 		primaryStage.setTitle("MovieRatings");
 		
 		//Parent Vbox
@@ -158,11 +230,13 @@ public class MovieRatingsApp extends Application {
 		TableColumn<Movie, ArrayList<String>> actors = new TableColumn<Movie, ArrayList<String>>("Actors");
 		actors.setMinWidth(495);
 				
-		mtitle.setCellValueFactory(new PropertyValueFactory<Movie, String>("mName"));
-		myear.setCellValueFactory(new PropertyValueFactory<Movie, Integer>("year"));
-		director.setCellValueFactory(new PropertyValueFactory<Movie, String>("director"));
-		actors.setCellValueFactory(new PropertyValueFactory<Movie, ArrayList<String>>("actors"));
-				
+		mtitle.setCellValueFactory(new PropertyValueFactory<Movie, String>("movieName"));
+		myear.setCellValueFactory(new PropertyValueFactory<Movie, Integer>("movieYear"));
+		director.setCellValueFactory(new PropertyValueFactory<Movie, String>("movieDir"));
+		actors.setCellValueFactory(new PropertyValueFactory<Movie, ArrayList<String>>("movieAct"));
+		
+		movieData = getRandMovies();
+		
 		movieTable.setItems(movieData);
 		movieTable.getColumns().addAll(
 				mtitle,	
@@ -316,7 +390,6 @@ public class MovieRatingsApp extends Application {
 		primaryStage.setMinWidth(600);
 		primaryStage.setMinHeight(400);
 		primaryStage.setScene(new Scene(parentVbox, 1200, 800));
-		conn = getConnection();
 		primaryStage.show();
 		
 	}
