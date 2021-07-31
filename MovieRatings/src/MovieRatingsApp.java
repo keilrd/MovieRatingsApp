@@ -580,8 +580,13 @@ public class MovieRatingsApp extends Application {
         // create user button action
         createBtn.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
-                CreateUserPopup.display(conn, false, 0);
-
+                String[] newUserValue = CreateUserPopup.display(conn, false, 0);
+                
+                if(newUserValue[0].compareTo("") != 0) {
+                	loggedInId = Integer.parseInt(newUserValue[0]);
+                	loggedInName = newUserValue[1];
+                	loggedIn = true;
+                }
             }
         });
 
@@ -589,7 +594,10 @@ public class MovieRatingsApp extends Application {
         // edit profile menu button action
         profile.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
-                CreateUserPopup.display(conn, true, loggedInId);
+                String[] updateUserValue = CreateUserPopup.display(conn, true, loggedInId);
+                if (updateUserValue[1].compareTo(loggedInName) != 0) {
+                	loggedInName = updateUserValue[1];
+                }
             }
         });
 
