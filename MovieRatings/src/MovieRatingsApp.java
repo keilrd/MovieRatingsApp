@@ -119,6 +119,7 @@ public class MovieRatingsApp extends Application {
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		
 		conn = getConnection();
 		primaryStage.setTitle("MovieRatings");
 		
@@ -385,7 +386,143 @@ public class MovieRatingsApp extends Application {
 			}
 		});
 		
-		
+		//Search button action
+		searchBtn.setOnAction(new EventHandler<ActionEvent>() {
+			public void handle(ActionEvent event) {
+				// all the items we want in the GUI
+				ObservableList<Movie> listMovies = FXCollections.observableArrayList();
+				listMovies.clear();
+				int mId; 
+				String mName; 
+				int year; 
+				double critRate; 
+				double audRate; 
+				int audCount;
+				String dirId;
+				String director;
+				String actQuery;
+				String query;
+				List<String> actors = new ArrayList<String>();
+				
+				String searchFieldText = searchField.getText();
+				String btnOption = (String)searchOptions.getValue();
+				System.out.println(btnOption);
+				System.out.println(searchFieldText);
+				switch(btnOption) {
+					case "Movie":
+						System.out.println("I'm searching based on movies");
+						query = "{CALL GetByMovie(?)}";
+					try {
+						CallableStatement stmt = conn.prepareCall(query);
+						stmt.setString(1, searchFieldText);
+						ResultSet rs = stmt.executeQuery();
+						while (rs.next()) {
+							mId = rs.getInt("MOV_ID");
+							mName = rs.getString("TITLE");
+							year = rs.getInt("YEAR");
+							critRate = rs.getDouble("CRITIC_RATE");
+							audRate = rs.getDouble("AUD_RATE");
+							audCount = rs.getInt("AUD_COUNT");
+							dirId = rs.getString("DIR_ID");
+							director = rs.getString("DIR_NAME");
+							actors.clear();
+							if (mId > 0){
+								actQuery = "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = " + mId + " Order by Ranking DESC limit 3";
+								CallableStatement stmt2 = conn.prepareCall(actQuery);
+								ResultSet rs2 = stmt2.executeQuery(actQuery);
+								while(rs2.next()) {
+									actors.add(rs2.getString("ACT_NAME"));
+								}
+							}
+							
+							listMovies.add(new Movie(mId, mName, year, critRate, audRate, audCount, director, actors));
+
+							}
+						
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					break;
+					case "Actor":
+						System.out.println("I'm searching based on Actors");
+						query = "{CALL GetByActor(?)}";
+						
+					try {
+						CallableStatement stmt = conn.prepareCall(query);
+						stmt.setString(1, searchFieldText);
+						ResultSet rs = stmt.executeQuery();
+						while (rs.next()) {
+							mId = rs.getInt("MOV_ID");
+							mName = rs.getString("TITLE");
+							year = rs.getInt("YEAR");
+							critRate = rs.getDouble("CRITIC_RATE");
+							audRate = rs.getDouble("AUD_RATE");
+							audCount = rs.getInt("AUD_COUNT");
+							dirId = rs.getString("DIR_ID");
+							director = rs.getString("DIR_NAME");
+							actors.clear();
+							if (mId > 0){
+								actQuery = "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = " + mId + " Order by Ranking DESC limit 3";
+								CallableStatement stmt2 = conn.prepareCall(actQuery);
+								ResultSet rs2 = stmt2.executeQuery(actQuery);
+								while(rs2.next()) {
+									actors.add(rs2.getString("ACT_NAME"));
+								}
+							}
+							
+							listMovies.add(new Movie(mId, mName, year, critRate, audRate, audCount, director, actors));
+
+							}
+						
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+						
+					break;
+					case "Director":
+						System.out.println("I'm searching based on Directors");
+						query = "{CALL GetByDirector(?)}";
+						try {
+							CallableStatement stmt = conn.prepareCall(query);
+							stmt.setString(1, searchFieldText);
+							ResultSet rs = stmt.executeQuery();
+							while (rs.next()) {
+								mId = rs.getInt("MOV_ID");
+								mName = rs.getString("TITLE");
+								year = rs.getInt("YEAR");
+								critRate = rs.getDouble("CRITIC_RATE");
+								audRate = rs.getDouble("AUD_RATE");
+								audCount = rs.getInt("AUD_COUNT");
+								dirId = rs.getString("DIR_ID");
+								director = rs.getString("DIR_NAME");
+								actors.clear();
+								if (mId > 0){
+									actQuery = "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = " + mId + " Order by Ranking DESC limit 3";
+									CallableStatement stmt2 = conn.prepareCall(actQuery);
+									ResultSet rs2 = stmt2.executeQuery(actQuery);
+									while(rs2.next()) {
+										actors.add(rs2.getString("ACT_NAME"));
+									}
+								}
+								
+								listMovies.add(new Movie(mId, mName, year, critRate, audRate, audCount, director, actors));
+
+								}
+							
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					break;
+					default:
+						break;			
+				}
+				movieTable.setItems(listMovies);
+				return;
+			}
+		});
 		//Set stage
 		primaryStage.setMinWidth(600);
 		primaryStage.setMinHeight(400);
