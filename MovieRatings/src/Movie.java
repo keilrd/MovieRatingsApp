@@ -60,6 +60,18 @@ public class Movie {
 		return this.movieAct.get();
 	}
 	
+	public int getMovieID() {
+	    return this.mId;
+	}
+	
+	public double getMovieCriticRating() {
+	    return this.critRate;
+	}
+	
+	public double getMovieAudRating() {
+	    return this.audRate;
+	}
+	
 	public String makeActString(List<String> actors) {
 		
 		String actString = "";
