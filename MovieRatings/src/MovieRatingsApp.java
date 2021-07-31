@@ -10,6 +10,8 @@ import javafx.scene.control.*;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.cell.MapValueFactory;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -38,13 +40,20 @@ public class MovieRatingsApp extends Application {
 	}
 	
 	public Connection getConnection() throws SQLException {
-
 	    Connection con = null;
 	    Properties connectionProps = new Properties();
+	    
+	    //define some database properties
+	    //TODO update mysql username and password 
 	    connectionProps.put("user", "root");
 	    connectionProps.put("password", "12345");
+	    
+	    //specify database
 	    con = DriverManager.getConnection("jdbc:mysql://localhost:3306/movie_ratings",connectionProps);
+	    
+	    //TODO remove dubug statement for connection to database
 	    System.out.println("Connected to database");
+	    
 	    return con;
 	}
 	
@@ -116,6 +125,13 @@ public class MovieRatingsApp extends Application {
 		return listMovies;
 	}
 	
+	private GridPane getReport(Movie movie) {
+		GridPane reportGrid = new GridPane();
+		
+		reportGrid.add(new Label(movie.getMovieName()),0,0,1,1);
+		
+		return reportGrid;
+	}
 	
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -245,12 +261,31 @@ public class MovieRatingsApp extends Application {
 				actors
 		);
 		
+		//scrollable report
+		ScrollPane movieReportScroll = new ScrollPane();
+		movieReportScroll.setMinHeight(325);
+		
+		
+		movieTable.setOnMouseClicked((MouseEvent event) -> {
+			if (event.getClickCount() > 0) {
+				if (movieTable.getSelectionModel().getSelectedItem() != null) {
+					movieReportScroll.setContent(getReport(movieTable.getSelectionModel().getSelectedItem()));
+				}
+			}
+		});
+		
+		//set default selection and report content
+		if (movieTable.getItems().size() > 0) {
+			movieTable.getSelectionModel().selectFirst();
+			movieReportScroll.setContent(getReport(movieTable.getSelectionModel().getSelectedItem()));
+		}
+		
 		parentVbox.getChildren().addAll(
 			topBar,
 			searchBar,
-			movieGridScroll
+			movieGridScroll,
+			movieReportScroll
 		);
-		
 		
 		
 		//button action
@@ -320,8 +355,8 @@ public class MovieRatingsApp extends Application {
 		//create user button action
 		createBtn.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event) {
-				System.out.println("Create button pressed");
-				CreateUserPopup.display(conn);
+				CreateUserPopup.display(conn, false, 0);
+				
 			}
 		});
 		
@@ -350,7 +385,7 @@ public class MovieRatingsApp extends Application {
 		//edit profile menu button action
 		profile.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event) {
-				System.out.println("edit profile menu");
+				CreateUserPopup.display(conn, true, loggedInId);
 			}
 		});
 		
@@ -389,6 +424,7 @@ public class MovieRatingsApp extends Application {
 		//Set stage
 		primaryStage.setMinWidth(600);
 		primaryStage.setMinHeight(400);
+		primaryStage.resizableProperty().set(false);
 		primaryStage.setScene(new Scene(parentVbox, 1200, 800));
 		primaryStage.show();
 		
