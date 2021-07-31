@@ -2,6 +2,7 @@ import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -22,11 +23,15 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import java.sql.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import javax.swing.JScrollPane;
+import javafx.scene.input.MouseEvent;
 
 public class MovieRatingsApp extends Application {
 
@@ -35,6 +40,8 @@ public class MovieRatingsApp extends Application {
     boolean loggedIn = false;
     String loggedInName = "";
     int loggedInId = 0;
+    static Image STAR;
+    static Image EMPTY_STAR;
 
     TableView<Movie> movieTable = new TableView<Movie>();
     ObservableList<Movie> movieData = FXCollections.observableArrayList();
@@ -136,6 +143,8 @@ public class MovieRatingsApp extends Application {
 
     private VBox getReport(Movie movie, VBox reportBox) {
 
+        // TODO update report when logged in
+
         reportBox.getChildren().clear();
         reportBox.setPadding(new Insets(10, 20, 10, 20));
         reportBox.setPrefWidth(1200);
@@ -144,18 +153,6 @@ public class MovieRatingsApp extends Application {
             reportBox.getChildren().add(new Label("Select a movie to view information"));
             return reportBox;
         }
-
-        TextArea movieInfo = new TextArea();
-        String text = "Movie info!";
-
-        /*
-         * - critic rating - user rating - director - actors - filming locations - buttons to rate
-         * the movie
-         */
-
-        // movieInfo.setText(text);
-        // movieInfo.setPrefHeight(250);
-        // movieInfo.setPrefWidth(1159);
 
         HBox title = new HBox();
         title.setAlignment(Pos.BOTTOM_LEFT);
@@ -178,6 +175,12 @@ public class MovieRatingsApp extends Application {
         getLocationsPane(paneBox, movie);
 
         reportBox.getChildren().add(paneBox);
+
+        // add user rating
+        if (loggedIn) {
+            displayUserRating(reportBox, movie);
+        }
+
         return reportBox;
     }
 
@@ -186,68 +189,211 @@ public class MovieRatingsApp extends Application {
         VBox ratingsVBox = new VBox();
         ratingsVBox.setPrefWidth(400);
         ratingsVBox.setAlignment(Pos.CENTER);
-        
-        double criticRating = movie.getMovieCriticRating();
 
-        Label criticRatingLabel = new Label("Critic Rating (" + criticRating + "/10)");
-        criticRatingLabel.setFont(new Font(25));
-        criticRatingLabel.setMaxWidth(400);
-        criticRatingLabel.setAlignment(Pos.BASELINE_CENTER);
-        criticRatingLabel.setPadding(new Insets(5));
-         
-        HBox criticRatingBox = displayRating(criticRating, 10);
-        criticRatingBox.setPadding(new Insets(0, 0, 10, 0));
-        
-        double audienceRating = movie.getMovieAudRating();
 
-        Label audienceRatingLabel = new Label("Audience Rating (" + audienceRating + "/5)");
-        audienceRatingLabel.setFont(new Font(25));
-        audienceRatingLabel.setMaxWidth(400);
-        audienceRatingLabel.setAlignment(Pos.BASELINE_CENTER);
-        audienceRatingLabel.setPadding(new Insets(5));
-        
-        HBox audienceRatingBox = displayRating(audienceRating,5);
-
-        ratingsVBox.getChildren().addAll(criticRatingLabel, criticRatingBox, audienceRatingLabel, audienceRatingBox);
-
+        displayRating(movie.getMovieCriticRating(), 10, ratingsVBox, "Critic Rating");
+        displayRating(movie.getMovieAudRating(), 5, ratingsVBox, "Audience Rating");
 
         paneBox.getChildren().add(ratingsVBox);
 
         return;
     }
-    
-    private HBox displayRating(double rating, int total) {
-        
+
+    private void displayRating(double rating, int total, VBox ratingsVBox, String label) {
+
+        Label ratingLabel = new Label(label + " (" + rating + "/" + total + ")");
+        ratingLabel.setFont(new Font(20));
+        ratingLabel.setMaxWidth(400);
+        ratingLabel.setAlignment(Pos.BASELINE_CENTER);
+        ratingLabel.setPadding(new Insets(5));
+
         HBox ratingHBox = new HBox();
         ratingHBox.setPrefWidth(400);
-        
+        ratingHBox.setPadding(new Insets(0, 0, 10, 0));
+
         rating = Math.round(rating);
-        
+
         int i = 0;
-        
+
         while (i < rating) {
             ratingHBox.getChildren().add(getStarImage(total));
             i++;
         }
-        
+
         while (i < total) {
             ratingHBox.getChildren().add(getEmptyStarImage(total));
             i++;
         }
-   
-        
-        
-        return ratingHBox;
+
+        ratingsVBox.getChildren().addAll(ratingLabel, ratingHBox);
+
+
+        return;
+    }
+
+    private void displayUserRating(VBox reportBox, Movie movie) {
+
+        double rating = getUserRating(movie);
+
+        Label ratingLabel = new Label("My Rating (" + rating + "/5)");
+        ratingLabel.setFont(new Font(25));
+        ratingLabel.setMaxWidth(400);
+        ratingLabel.setAlignment(Pos.CENTER);
+        ratingLabel.setPadding(new Insets(5));
+
+        HBox ratingHBox = new HBox();
+        ratingHBox.setPrefWidth(1200);
+        ratingHBox.setPadding(new Insets(0, 0, 10, 0));
+        ratingHBox.setAlignment(Pos.CENTER);
+
+        ratingHBox.getChildren().add(ratingLabel);
+
+        rating = Math.round(rating);
+
+        int i = 0;
+
+        while (i < rating) {
+            
+            ImageView starImage = getStarImage(5);
+            final float newRating = i + 1;
+
+            starImage.setPickOnBounds(true);
+
+            starImage.addEventHandler(MouseEvent.MOUSE_CLICKED,
+                new EventHandler<MouseEvent>() {
+
+                    @Override
+                    public void handle(MouseEvent event) {
+
+                        updateUserRating(newRating, ratingHBox, movie); //TODO test that instant and rating are updated in database
+                        event.consume();
+
+                    }
+                });
+
+            ratingHBox.getChildren().add(starImage);
+            i++;
+        }
+
+        while (i < 5) {
+
+            ImageView emptyStarImage = getEmptyStarImage(5);
+            final float newRating = i + 1;
+
+            emptyStarImage.setPickOnBounds(true);
+
+            emptyStarImage.addEventHandler(MouseEvent.MOUSE_CLICKED,
+                new EventHandler<MouseEvent>() {
+
+                    @Override
+                    public void handle(MouseEvent event) {
+
+                        updateUserRating(newRating, ratingHBox, movie);
+                        event.consume();
+
+                    }
+                });
+            ratingHBox.getChildren().add(emptyStarImage);
+            i++;
+        }
+
+        reportBox.getChildren().addAll(ratingHBox);
+
+
+        return;
+    }
+
+    private void updateUserRating(float newRating, HBox ratingHBox, Movie movie) {
+
+        int mId = movie.getMovieID();
+
+        LocalDateTime now = LocalDateTime.now();
+        int year = now.getYear();
+        int month = now.getMonthValue();
+        int day = now.getDayOfMonth();
+        int hour = now.getHour();
+        int minute = now.getMinute();
+        int second = now.getSecond();
+
+
+        // update database
+        try (Statement stmt = conn.createStatement()) {
+
+            String query = "SELECT Rating FROM user_ratings WHERE User_id = " + loggedInId
+                + " and mov_id = " + mId;
+
+            ResultSet result = stmt.executeQuery(query);
+
+            if (result.next()) {
+
+                String updateQuery =
+                    "update user_ratings set Rating = ?, Time_day = ?, Time_month = ?, Time_year = ?, Time_hour = ?, Time_min = ?, Time_sec = ? WHERE user_ID = ? and mov_id = ?";
+
+
+                PreparedStatement preparedStmt = conn.prepareStatement(updateQuery);
+                preparedStmt.setFloat(1, newRating);
+                preparedStmt.setInt(2, day);
+                preparedStmt.setInt(3, month);
+                preparedStmt.setInt(4, year);
+                preparedStmt.setInt(5, hour);
+                preparedStmt.setInt(6, minute);
+                preparedStmt.setInt(7, second);
+                preparedStmt.setInt(8, loggedInId);
+                preparedStmt.setInt(9, mId);
+                preparedStmt.execute();
+
+            }
+
+            else {
+                
+                String updateQuery =
+                    " insert into user_ratings (user_id, mov_id, Rating, Time_day, Time_month, Time_year, Time_hour, Time_min, Time_sec)"
+                        + " values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                PreparedStatement preparedStmt;
+                preparedStmt = conn.prepareStatement(updateQuery);
+                preparedStmt.setInt(1, loggedInId);
+                preparedStmt.setInt(2, mId);
+                preparedStmt.setFloat(3, newRating);
+                preparedStmt.setInt(4, day);
+                preparedStmt.setInt(5, month);
+                preparedStmt.setInt(6, year);
+                preparedStmt.setInt(7, hour);
+                preparedStmt.setInt(8, minute);
+                preparedStmt.setInt(9, second);
+                preparedStmt.execute();
+            }
+
+        } catch (SQLException e) {
+            System.out.println(e);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        // update display
+        for (int i = 1; i <= 5; i++) {
+
+            ImageView image = (ImageView) ratingHBox.getChildren().get(i);
+
+            if (i <= newRating) {
+
+                image.setImage(STAR);
+            }
+
+            else {
+
+                image.setImage(EMPTY_STAR);
+            }
+        }
     }
 
     private ImageView getStarImage(int total) {
-        
+
         ImageView starImage = null;
 
         try {
-            starImage =
-                new ImageView(new Image(getClass().getResourceAsStream("star.png")));
-            starImage.setFitWidth(400/total);
+            starImage = new ImageView(STAR);
+            starImage.setFitWidth(400 / total);
             starImage.setPreserveRatio(true);
 
         } catch (NullPointerException e) {
@@ -257,20 +403,21 @@ public class MovieRatingsApp extends Application {
             missingImageAlert.show();
 
         }
-        
+
         return starImage;
-        
+
     }
+
 
     private ImageView getEmptyStarImage(int total) {
-        
+
         ImageView starImage = null;
 
         try {
-            starImage =
-                new ImageView(new Image(getClass().getResourceAsStream("empty_star.png")));
-            starImage.setFitWidth(400/total);
+            starImage = new ImageView(EMPTY_STAR);
+            starImage.setFitWidth(400 / total);
             starImage.setPreserveRatio(true);
+
 
         } catch (NullPointerException e) {
             Alert missingImageAlert =
@@ -279,12 +426,47 @@ public class MovieRatingsApp extends Application {
             missingImageAlert.show();
 
         }
-        
+
         return starImage;
-        
+
     }
 
-    void getActorsPane(HBox paneBox, Movie movie) {
+    private double getUserRating(Movie movie) {
+
+        int mId = movie.getMovieID();
+        double rating = 0;
+
+        try (Statement stmt = conn.createStatement()) {
+
+            String query = "SELECT Rating FROM user_ratings WHERE User_id = " + loggedInId
+                + " and mov_id = " + mId;
+
+            ResultSet result = stmt.executeQuery(query);
+
+            String ratingResult = "";
+
+            while (result.next()) {
+
+                ratingResult = result.getString("Rating");
+
+            }
+
+            if (ratingResult.length() == 0) {
+                return 0;
+            }
+
+            rating = Double.parseDouble(ratingResult);
+
+        } catch (SQLException e) {
+            System.out.println(e);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
+        return rating;
+    }
+
+    private void getActorsPane(HBox paneBox, Movie movie) {
 
         ScrollPane actorsPane = new ScrollPane();
         actorsPane.setPrefHeight(250);
@@ -392,9 +574,22 @@ public class MovieRatingsApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+
         conn = getConnection();
         primaryStage.setTitle("MovieRatings");
-        
+
+        try {
+            STAR = new Image(getClass().getResourceAsStream("star.png"));
+            EMPTY_STAR = new Image(getClass().getResourceAsStream("empty_star.png"));
+
+        } catch (NullPointerException e) {
+            Alert missingImageAlert =
+                new Alert(AlertType.ERROR, "An Image Used by the Application is Missing");
+            missingImageAlert.setHeaderText("Image Not Found");
+            missingImageAlert.show();
+
+        }
+
         // Parent Vbox
         VBox parentVbox = new VBox();
 
@@ -560,6 +755,10 @@ public class MovieRatingsApp extends Application {
                         // clear the username/password fields
                         userTextField.setText("");
                         userPwField.setText("");
+                        if (movieTable.getSelectionModel().getSelectedItem() != null) {
+                            getReport(movieTable.getSelectionModel().getSelectedItem(),
+                                movieReport);
+                        }
 
                     } else {
                         error = 1;
