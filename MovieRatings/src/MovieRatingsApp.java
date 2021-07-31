@@ -412,12 +412,6 @@ public class MovieRatingsApp extends Application {
 
         Menu mainMenu = new Menu("Menu");
 
-        MenuItem addMovie = new MenuItem("Add Movie");
-        addMovie.setDisable(true);
-        MenuItem addAct = new MenuItem("Add Actor");
-        addAct.setDisable(true);
-        MenuItem addDir = new MenuItem("Add Director");
-        addDir.setDisable(true);
         MenuItem profile = new MenuItem("Edit Profile");
         profile.setDisable(true);
 
@@ -427,7 +421,7 @@ public class MovieRatingsApp extends Application {
         MenuItem exit = new MenuItem("Exit");
 
 
-        mainMenu.getItems().addAll(addMovie, addAct, addDir, profile, logout, exit);
+        mainMenu.getItems().addAll(profile, logout, exit);
 
         menuBar.getMenus().add(mainMenu);
 
@@ -552,9 +546,6 @@ public class MovieRatingsApp extends Application {
                             loggedInName = userTextField.getText();
                             loggedInId = userId;
 
-                            addMovie.setDisable(false);
-                            addAct.setDisable(false);
-                            addDir.setDisable(false);
                             profile.setDisable(false);
                             logout.setDisable(false);
 
@@ -595,27 +586,6 @@ public class MovieRatingsApp extends Application {
         });
 
         // menu actions
-        // add movie menu button action
-        addMovie.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent event) {
-                System.out.println("add movie menu");
-            }
-        });
-
-        // add actor menu button action
-        addAct.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent event) {
-                System.out.println("add actor menu");
-            }
-        });
-
-        // add director menu button action
-        addDir.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent event) {
-                System.out.println("add director menu");
-            }
-        });
-
         // edit profile menu button action
         profile.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
@@ -630,9 +600,6 @@ public class MovieRatingsApp extends Application {
                 loggedInName = "";
                 loggedInId = 0;
 
-                addMovie.setDisable(true);
-                addAct.setDisable(true);
-                addDir.setDisable(true);
                 profile.setDisable(true);
                 logout.setDisable(true);
                 userLabel.setText("");
