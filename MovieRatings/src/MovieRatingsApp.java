@@ -55,16 +55,12 @@ public class MovieRatingsApp extends Application {
         Properties connectionProps = new Properties();
 
         // define some database properties
-        // TODO update mysql username and password
         connectionProps.put("user", "root");
         connectionProps.put("password", "12345");
 
         // specify database
         con = DriverManager.getConnection("jdbc:mysql://localhost:3306/movie_ratings",
             connectionProps);
-
-        // TODO remove dubug statement for connection to database
-        System.out.println("Connected to database");
 
         return con;
     }
@@ -131,10 +127,6 @@ public class MovieRatingsApp extends Application {
                 System.out.println(e);
             }
 
-
-
-            // Movie(int mId, String mName, int year, double critRate, double audRate, int audCount,
-            // String director, List<String> actors)
         }
 
 
@@ -168,7 +160,7 @@ public class MovieRatingsApp extends Application {
         HBox paneBox = new HBox();
         paneBox.setPrefWidth(1200);
 
-        getRatingsPane(paneBox, movie);
+        VBox ratingsPane = getRatingsPane(paneBox, movie);
         getActorsPane(paneBox, movie);
         getLocationsPane(paneBox, movie);
 
@@ -176,13 +168,14 @@ public class MovieRatingsApp extends Application {
 
         // add user rating
         if (loggedIn) {
-            displayUserRating(reportBox, movie);
+            displayUserRating(reportBox, movie, ratingsPane);
         }
+
 
         return reportBox;
     }
 
-    void getRatingsPane(HBox paneBox, Movie movie) {
+    VBox getRatingsPane(HBox paneBox, Movie movie) {
 
         VBox ratingsVBox = new VBox();
         ratingsVBox.setPrefWidth(400);
@@ -194,7 +187,7 @@ public class MovieRatingsApp extends Application {
 
         paneBox.getChildren().add(ratingsVBox);
 
-        return;
+        return ratingsVBox;
     }
 
     private void displayRating(double rating, int total, VBox ratingsVBox, String label) {
@@ -229,7 +222,7 @@ public class MovieRatingsApp extends Application {
         return;
     }
 
-    private void displayUserRating(VBox reportBox, Movie movie) {
+    private void displayUserRating(VBox reportBox, Movie movie, VBox ratingsPane) {
 
         double rating = getUserRating(movie);
 
@@ -262,7 +255,7 @@ public class MovieRatingsApp extends Application {
                 @Override
                 public void handle(MouseEvent event) {
 
-                    updateUserRating(newRating, ratingHBox, movie); // TODO test that instant and
+                    updateUserRating(newRating, ratingHBox, movie, ratingsPane); // TODO test that instant and
                                                                     // rating are updated in
                                                                     // database
                     event.consume();
@@ -287,7 +280,7 @@ public class MovieRatingsApp extends Application {
                     @Override
                     public void handle(MouseEvent event) {
 
-                        updateUserRating(newRating, ratingHBox, movie);
+                        updateUserRating(newRating, ratingHBox, movie, ratingsPane);
                         event.consume();
 
                     }
@@ -302,7 +295,7 @@ public class MovieRatingsApp extends Application {
         return;
     }
 
-    private void updateUserRating(float newRating, HBox ratingHBox, Movie movie) {
+    private void updateUserRating(float newRating, HBox ratingHBox, Movie movie, VBox ratingsPane) {
 
         int mId = movie.getMovieID();
 
@@ -314,6 +307,7 @@ public class MovieRatingsApp extends Application {
         int minute = now.getMinute();
         int second = now.getSecond();
 
+        float oldUserRating = 0; // default to this being the first rating the user has left for the movie
 
         // update database
         try (Statement stmt = conn.createStatement()) {
@@ -322,8 +316,12 @@ public class MovieRatingsApp extends Application {
                 + " and mov_id = " + mId;
 
             ResultSet result = stmt.executeQuery(query);
+            
+            boolean changed = false;
 
             if (result.next()) {
+                
+                oldUserRating = result.getFloat("Rating");
 
                 String updateQuery =
                     "update user_ratings set Rating = ?, Time_day = ?, Time_month = ?, Time_year = ?, Time_hour = ?, Time_min = ?, Time_sec = ? WHERE user_ID = ? and mov_id = ?";
@@ -361,29 +359,78 @@ public class MovieRatingsApp extends Application {
                 preparedStmt.setInt(8, minute);
                 preparedStmt.setInt(9, second);
                 preparedStmt.execute();
+
+
+            }
+
+            // update movie's audience rating
+            changed = movie.updateAudRatingandCount(newRating, oldUserRating);
+
+            // update movie table with new audience rating
+            String movUpdateQuery =
+                "update movies set Aud_rate = ?, Aud_count = ? WHERE mov_ID = ?";
+
+            PreparedStatement movPreparedStmt = conn.prepareStatement(movUpdateQuery);
+            movPreparedStmt.setDouble(1, movie.getMovieAudRating());
+            movPreparedStmt.setInt(2, movie.getMovieAudCount());
+            movPreparedStmt.setInt(3, movie.getMovieID());
+
+            movPreparedStmt.execute();
+
+
+            // update user rating display
+            
+            Label userRateLabel = (Label) ratingHBox.getChildren().get(0); // user rating label
+            userRateLabel.setText( "My Rating (" + newRating + "/" + 5 + ")");
+            
+            for (int i = 1; i <= 5; i++) {
+
+                ImageView image = (ImageView) ratingHBox.getChildren().get(i);
+
+                if (i <= newRating) {
+
+                    image.setImage(STAR);
+                }
+
+                else {
+
+                    image.setImage(EMPTY_STAR);
+                }
+                
+            }
+            
+            // update audience rating display if the average rating changed
+            if (changed) {
+                
+                Label audRateLabel = (Label) ratingsPane.getChildren().get(2); // label for audience rating
+                audRateLabel.setText( "Audience Rating (" + movie.getMovieAudRating() + "/" + 5 + ")");
+                
+                HBox audRateHBox = (HBox) ratingsPane.getChildren().get(3);
+                
+                for (int i = 0; i < 5; i++) {
+
+                    ImageView image = (ImageView) audRateHBox.getChildren().get(i);
+
+                    if (i < movie.getMovieAudRating()) {
+
+                        image.setImage(STAR);
+                    }
+
+                    else {
+
+                        image.setImage(EMPTY_STAR);
+                    }
+                    
+                }
             }
 
         } catch (SQLException e) {
-            System.out.println(e);
+            System.out.println(e); // TODO error about unable to update?
         } catch (Exception e) {
             System.out.println(e);
         }
 
-        // update display
-        for (int i = 1; i <= 5; i++) {
 
-            ImageView image = (ImageView) ratingHBox.getChildren().get(i);
-
-            if (i <= newRating) {
-
-                image.setImage(STAR);
-            }
-
-            else {
-
-                image.setImage(EMPTY_STAR);
-            }
-        }
     }
 
     private ImageView getStarImage(int total) {
@@ -484,8 +531,8 @@ public class MovieRatingsApp extends Application {
                 getMoviesByActor(actor, listMovies);
                 movieTable.setItems(listMovies);
 
-                System.out.println(actor + " was clicked!"); //TODO remove
-                
+                System.out.println(actor + " was clicked!"); // TODO remove
+
             });
 
             actorsVBox.getChildren().add(actorLink);
@@ -844,7 +891,7 @@ public class MovieRatingsApp extends Application {
 
         // logout menu button action
         logout.setOnAction(new EventHandler<ActionEvent>() {
-            
+
             public void handle(ActionEvent event) {
                 loggedIn = false;
                 loggedInName = "";
@@ -856,10 +903,9 @@ public class MovieRatingsApp extends Application {
 
                 topBar.getChildren().remove(userLabel);
                 topBar.getChildren().addAll(userTextField, userPwField, loginBtn, createBtn);
-                
+
                 if (movieTable.getSelectionModel().getSelectedItem() != null) {
-                    getReport(movieTable.getSelectionModel().getSelectedItem(),
-                        movieReport);
+                    getReport(movieTable.getSelectionModel().getSelectedItem(), movieReport);
                 }
 
             }
@@ -934,7 +980,7 @@ public class MovieRatingsApp extends Application {
                             e.printStackTrace();
                         }
                         break;
-                        
+
                     case "Actor":
 
                         System.out.println("I'm searching based on Actors");
@@ -942,7 +988,7 @@ public class MovieRatingsApp extends Application {
                         getMoviesByActor(searchFieldText, listMovies);
 
                         break;
-                        
+
                     case "Director":
                         System.out.println("I'm searching based on Directors");
                         query = "{CALL GetByDirector(?)}";
