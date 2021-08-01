@@ -206,6 +206,10 @@ public class MovieRatingsApp extends Application {
 
         displayRating(movie.getMovieCriticRating(), 10, ratingsVBox, "Critic Rating");
         displayRating(movie.getMovieAudRating(), 5, ratingsVBox, "Audience Rating");
+        
+        // add count of audience ratings
+        Label audCountLabel = new Label(movie.getMovieAudCount() + " audience ratings");
+        ratingsVBox.getChildren().add(audCountLabel);
 
         paneBox.getChildren().add(ratingsVBox);
 
@@ -219,7 +223,7 @@ public class MovieRatingsApp extends Application {
      * @param ratingsVBox The ratings VBox to update with the information
      * @param label The label to use for the rating. The label will be appended with " (<rating>/<total>)"
      */
-    private void displayRating(double rating, int total, VBox ratingsVBox, String label) {
+    private void displayRating(double rating, double total, VBox ratingsVBox, String label) {
 
         Label ratingLabel = new Label(label + " (" + rating + "/" + total + ")");
         ratingLabel.setFont(new Font(20));
@@ -259,7 +263,7 @@ public class MovieRatingsApp extends Application {
      */
     private void displayUserRating(VBox reportBox, Movie movie, VBox ratingsPane) {
 
-        double rating = getUserRating(movie);
+        int rating = getUserRating(movie);
 
         Label ratingLabel = new Label("My Rating (" + rating + "/5)");
         ratingLabel.setFont(new Font(25));
@@ -281,7 +285,7 @@ public class MovieRatingsApp extends Application {
         while (i < rating) {
 
             ImageView starImage = getStarImage(5);
-            final float newRating = i + 1;
+            final int newRating = i + 1;
 
             starImage.setPickOnBounds(true);
 
@@ -305,7 +309,7 @@ public class MovieRatingsApp extends Application {
         while (i < 5) {
 
             ImageView emptyStarImage = getEmptyStarImage(5);
-            final float newRating = i + 1;
+            final int newRating = i + 1;
 
             emptyStarImage.setPickOnBounds(true);
 
@@ -339,7 +343,7 @@ public class MovieRatingsApp extends Application {
      * @param movie the movie to update the rating for
      * @param ratingsPane VBox where the critic and audience ratings are displayed
      */
-    private void updateUserRating(float newRating, HBox userRatingHBox, Movie movie, VBox ratingsPane) {
+    private void updateUserRating(int newRating, HBox userRatingHBox, Movie movie, VBox ratingsPane) {
 
         int mId = movie.getMovieID();
 
@@ -366,6 +370,7 @@ public class MovieRatingsApp extends Application {
             if (result.next()) {
                 
                 oldUserRating = result.getFloat("Rating");
+                //HERE
 
                 String updateQuery =
                     "update user_ratings set Rating = ?, Time_day = ?, Time_month = ?, Time_year = ?, Time_hour = ?, Time_min = ?, Time_sec = ? WHERE user_ID = ? and mov_id = ?";
@@ -425,7 +430,7 @@ public class MovieRatingsApp extends Application {
             // update user rating display
             
             Label userRateLabel = (Label) userRatingHBox.getChildren().get(0); // user rating label
-            userRateLabel.setText( "My Rating (" + newRating + "/" + 5 + ")");
+            userRateLabel.setText( "My Rating (" + newRating + "/5)");
             
             for (int i = 1; i <= 5; i++) {
 
@@ -443,11 +448,18 @@ public class MovieRatingsApp extends Application {
                 
             }
             
+            // If this is the first time the user rated the movie, the user count was updated so update the display
+            if (oldUserRating == 0) {              
+                
+                Label audCountLabel = (Label) ratingsPane.getChildren().get(4); // label for audience rating count
+                    audCountLabel.setText(movie.getMovieAudCount() + " audience ratings");
+            }
+            
             // update audience rating display if the average rating changed
             if (changed) {
                 
-                Label audRateLabel = (Label) ratingsPane.getChildren().get(2); // label for audience rating
-                audRateLabel.setText( "Audience Rating (" + movie.getMovieAudRating() + "/" + 5 + ")");
+                Label audRateLabel = (Label) ratingsPane.getChildren().get(2); // label for avg audience rating
+                audRateLabel.setText( "Audience Rating (" + movie.getMovieAudRating() + "/5.0)");
                 
                 HBox audRateHBox = (HBox) ratingsPane.getChildren().get(3);
                 
@@ -483,7 +495,7 @@ public class MovieRatingsApp extends Application {
      * the size of the star ImageView
      * @return The ImageView for the star
      */
-    private ImageView getStarImage(int total) {
+    private ImageView getStarImage(double total) {
 
         ImageView starImage = null;
 
@@ -510,7 +522,7 @@ public class MovieRatingsApp extends Application {
      * the size of the star ImageView
      * @return The ImageView for the unfilled star
      */
-    private ImageView getEmptyStarImage(int total) {
+    private ImageView getEmptyStarImage(double total) {
 
         ImageView starImage = null;
 
@@ -537,10 +549,10 @@ public class MovieRatingsApp extends Application {
      * @param movie the movie to get the rating for
      * @return the rating the user left for the move. 0 If they haven't left a rating for the movie.
      */
-    private double getUserRating(Movie movie) {
+    private int getUserRating(Movie movie) {
 
         int mId = movie.getMovieID();
-        double rating = 0;
+        int rating = 0;
 
         try (Statement stmt = conn.createStatement()) {
 
@@ -549,19 +561,13 @@ public class MovieRatingsApp extends Application {
 
             ResultSet result = stmt.executeQuery(query);
 
-            String ratingResult = "";
-
             while (result.next()) {
 
-                ratingResult = result.getString("Rating");
+                rating = result.getInt("Rating");
 
             }
 
-            if (ratingResult.length() == 0) {
-                return 0;
-            }
 
-            rating = Double.parseDouble(ratingResult);
 
         } catch (SQLException e) {
             System.out.println(e);
