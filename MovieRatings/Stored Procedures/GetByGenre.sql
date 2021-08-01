@@ -16,7 +16,7 @@ BEGIN
         ,m.AUD_COUNT
     FROM 
 		MOVIES m
-        ,MOVIES_GENRE mg 
+        ,MOVIE_GENRES mg 
         ,DIRECTORS d
     Where
 		mg.GENRE LIKE CONCAT('%',LOWER(favortiteGenre),'%')

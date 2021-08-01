@@ -28,6 +28,3 @@ BEGIN
 END //
 
 DELIMITER ;
-
-
-Call GetByActor('don');

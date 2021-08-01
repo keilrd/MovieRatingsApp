@@ -2,20 +2,16 @@ import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ScrollPane.ScrollBarPolicy;
-import javafx.scene.control.cell.MapValueFactory;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -23,33 +19,41 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 import java.sql.*;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
-import javax.swing.JScrollPane;
-import javafx.scene.input.MouseEvent;
 
+/**
+ * Main Class for the Movie Ratings JavaFX Application
+ * @author Jenny Krewer, Mohammad Islam, Ryan Keil
+ */
 public class MovieRatingsApp extends Application {
 
-    String searches[] = {"Movie", "Actor", "Director"};
-    Connection conn;
-    boolean loggedIn = false;
-    String loggedInName = "";
-    int loggedInId = 0;
-    static Image STAR;
-    static Image EMPTY_STAR;
+    String searches[] = {"Movie", "Actor", "Director"}; // options to search the database
+    Connection conn; // the connection to the mySQL database
+    boolean loggedIn = false; // boolean to keep track of whether or not someone is logged in
+    String loggedInName = ""; // username for the logged in user
+    int loggedInId = 0; // user ID for the logged in user
+    static Image STAR; // image for filled in stars used for ratings
+    static Image EMPTY_STAR; // image for empty in stars used for ratings
 
-    TableView<Movie> movieTable = new TableView<Movie>();
-    ObservableList<Movie> movieData = FXCollections.observableArrayList();
+    TableView<Movie> movieTable = new TableView<Movie>(); // view to display movies found in the database
+    ObservableList<Movie> movieData = FXCollections.observableArrayList(); // list of movies to display
 
+    /**
+     * Main method. Calls start to run the application
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * Gets the connection to the mySQL server
+     * @return Connect to the server
+     * @throws SQLException if unable to connect
+     */
     public Connection getConnection() throws SQLException {
         Connection con = null;
         Properties connectionProps = new Properties();
@@ -65,6 +69,10 @@ public class MovieRatingsApp extends Application {
         return con;
     }
 
+    /**
+     * Returns a random list of movies to display when the application is first launched.
+     * @return ObservableList of movies to display
+     */
     private ObservableList<Movie> getRandMovies() {
         ObservableList<Movie> listMovies = FXCollections.observableArrayList();
         Random rand = new Random();
@@ -133,6 +141,13 @@ public class MovieRatingsApp extends Application {
         return listMovies;
     }
 
+    /**
+     * Updates a VBox with information about the selected movie to display in the report. Returns the
+     * VBox for ratings to use to update the ratings display if it is changed by the user
+     * @param movie The movie to display the report for
+     * @param reportBox The VBox for the Report
+     * @return the VBox where critic and audience ratings information is displayed
+     */
     private VBox getReport(Movie movie, VBox reportBox) {
 
         reportBox.getChildren().clear();
@@ -162,6 +177,7 @@ public class MovieRatingsApp extends Application {
 
         VBox ratingsPane = getRatingsPane(paneBox, movie);
         getActorsPane(paneBox, movie);
+        getGenresPane(paneBox, movie);
         getLocationsPane(paneBox, movie);
 
         reportBox.getChildren().add(paneBox);
@@ -175,6 +191,12 @@ public class MovieRatingsApp extends Application {
         return reportBox;
     }
 
+    /**
+     * Creates, populates, and returns a VBox to display ratings information in the report
+     * @param paneBox The HBox for the Report
+     * @param movie The movie to display the report for
+     * @return The VBox for the ratings
+     */
     VBox getRatingsPane(HBox paneBox, Movie movie) {
 
         VBox ratingsVBox = new VBox();
@@ -190,6 +212,13 @@ public class MovieRatingsApp extends Application {
         return ratingsVBox;
     }
 
+    /**
+     * Adds a rating (audience or critic) to the ratings VBox, including a label and images for the stars
+     * @param rating The number of stars to display
+     * @param total The total number of stars the rating is out of
+     * @param ratingsVBox The ratings VBox to update with the information
+     * @param label The label to use for the rating. The label will be appended with " (<rating>/<total>)"
+     */
     private void displayRating(double rating, int total, VBox ratingsVBox, String label) {
 
         Label ratingLabel = new Label(label + " (" + rating + "/" + total + ")");
@@ -222,6 +251,12 @@ public class MovieRatingsApp extends Application {
         return;
     }
 
+    /**
+     * Adds the logged in users rating to the report
+     * @param reportBox The VBox for the report
+     * @param movie The movie to display the rating for
+     * @param ratingsPane The VBox where the audience and critic ratings are displayed
+     */
     private void displayUserRating(VBox reportBox, Movie movie, VBox ratingsPane) {
 
         double rating = getUserRating(movie);
@@ -295,7 +330,16 @@ public class MovieRatingsApp extends Application {
         return;
     }
 
-    private void updateUserRating(float newRating, HBox ratingHBox, Movie movie, VBox ratingsPane) {
+    /**
+     * Updates a users rating when they change it for a movie in the report. Updates, the movie object and
+     * the user_ratings and movies tables in the database. The movies table is updated with the new average
+     * rating including the new rating from the user.
+     * @param newRating The rating the user chose that needs to be added or updated.
+     * @param userRatingHBox The HBox where the user rating is displayed
+     * @param movie the movie to update the rating for
+     * @param ratingsPane VBox where the critic and audience ratings are displayed
+     */
+    private void updateUserRating(float newRating, HBox userRatingHBox, Movie movie, VBox ratingsPane) {
 
         int mId = movie.getMovieID();
 
@@ -380,12 +424,12 @@ public class MovieRatingsApp extends Application {
 
             // update user rating display
             
-            Label userRateLabel = (Label) ratingHBox.getChildren().get(0); // user rating label
+            Label userRateLabel = (Label) userRatingHBox.getChildren().get(0); // user rating label
             userRateLabel.setText( "My Rating (" + newRating + "/" + 5 + ")");
             
             for (int i = 1; i <= 5; i++) {
 
-                ImageView image = (ImageView) ratingHBox.getChildren().get(i);
+                ImageView image = (ImageView) userRatingHBox.getChildren().get(i);
 
                 if (i <= newRating) {
 
@@ -433,6 +477,12 @@ public class MovieRatingsApp extends Application {
 
     }
 
+    /**
+     * Creates and returns an image view for a star to display a rating
+     * @param total the total number of stars that will be displayed in the rating. Used to determine
+     * the size of the star ImageView
+     * @return The ImageView for the star
+     */
     private ImageView getStarImage(int total) {
 
         ImageView starImage = null;
@@ -454,7 +504,12 @@ public class MovieRatingsApp extends Application {
 
     }
 
-
+    /**
+     * Creates and returns an image view for an unfilled star to display a rating
+     * @param total the total number of stars that will be displayed in the rating. Used to determine
+     * the size of the star ImageView
+     * @return The ImageView for the unfilled star
+     */
     private ImageView getEmptyStarImage(int total) {
 
         ImageView starImage = null;
@@ -477,6 +532,11 @@ public class MovieRatingsApp extends Application {
 
     }
 
+    /**
+     * Gets the logged in user's rating for a movie from the mySQL database
+     * @param movie the movie to get the rating for
+     * @return the rating the user left for the move. 0 If they haven't left a rating for the movie.
+     */
     private double getUserRating(Movie movie) {
 
         int mId = movie.getMovieID();
@@ -512,11 +572,93 @@ public class MovieRatingsApp extends Application {
         return rating;
     }
 
+    /**
+     * Creates and adds a VBox for the genres for the movie to the report. Includes links for each
+     * genre used to search the database for other movies with that genre.
+     * @param paneBox The HBox for the report the Genres VBox will be added to
+     * @param movie the movie to populate genres for.
+     */
+    private void getGenresPane(HBox paneBox, Movie movie) {
+
+        ScrollPane genresPane = new ScrollPane();
+        genresPane.setPrefHeight(250);
+        genresPane.setMaxWidth(250);
+
+        VBox genresVBox = new VBox();
+
+        // search database and add genres to display
+        int mId = movie.getMovieID();
+
+        try (Statement stmt = conn.createStatement()) {
+
+            String query =
+                "SELECT Genre FROM movie_genres WHERE mov_id = "
+                    + mId;
+
+            ResultSet result = stmt.executeQuery(query);
+            
+            int genreCount = 0;
+
+            while (result.next()) {
+                
+                genreCount++;
+
+                String genre = result.getString("Genre");
+                Hyperlink genreLink = new Hyperlink(genre);
+
+                genreLink.setOnAction(e -> {
+
+                    ObservableList<Movie> listMovies = FXCollections.observableArrayList();
+                    getMoviesByGenre(genre, listMovies);
+                    movieTable.setItems(listMovies);
+
+                });
+
+                genresVBox.getChildren().add(genreLink);
+
+
+            }
+            
+            if (genreCount == 0) {
+                
+                Label genreLabel = new Label("No genres listed");
+                genreLabel.setPadding(new Insets(5));
+                genresVBox.getChildren().add(genreLabel);
+                
+            }
+
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+
+        genresPane.setContent(genresVBox);
+
+        Label genresLabel = new Label("Genres");
+        genresLabel.setFont(new Font(15));
+        genresLabel.setMaxWidth(250);
+        genresLabel.setAlignment(Pos.BASELINE_CENTER);
+        genresLabel.setPadding(new Insets(5));
+
+        VBox genreVBox = new VBox();
+        genreVBox.getChildren().addAll(genresLabel, genresPane);
+        genreVBox.setPrefWidth(250);
+
+        paneBox.getChildren().add(genreVBox);
+
+        return;
+    }
+    
+    /** 
+     * Creates and adds a VBox for the actors in the movie to the report. Includes links for each
+     * actor used to search the database for other movies the actor is in.
+     * @param paneBox The HBox for the report the Actors VBox will be added to
+     * @param movie the movie to populate actors from.
+     */
     private void getActorsPane(HBox paneBox, Movie movie) {
 
         ScrollPane actorsPane = new ScrollPane();
         actorsPane.setPrefHeight(250);
-        actorsPane.setMaxWidth(400);
+        actorsPane.setMaxWidth(250);
 
         VBox actorsVBox = new VBox();
 
@@ -528,10 +670,8 @@ public class MovieRatingsApp extends Application {
             actorLink.setOnAction(e -> {
 
                 ObservableList<Movie> listMovies = FXCollections.observableArrayList();
-                getMoviesByActor(actor, listMovies);
+                getMoviesByActor(actor, listMovies, false);
                 movieTable.setItems(listMovies);
-
-                System.out.println(actor + " was clicked!"); // TODO remove
 
             });
 
@@ -542,24 +682,29 @@ public class MovieRatingsApp extends Application {
 
         Label actorsLabel = new Label("Actors");
         actorsLabel.setFont(new Font(15));
-        actorsLabel.setMaxWidth(400);
+        actorsLabel.setMaxWidth(250);
         actorsLabel.setAlignment(Pos.BASELINE_CENTER);
         actorsLabel.setPadding(new Insets(5));
 
         VBox actorVBox = new VBox();
         actorVBox.getChildren().addAll(actorsLabel, actorsPane);
-        actorVBox.setPrefWidth(400);
+        actorVBox.setPrefWidth(250);
 
         paneBox.getChildren().add(actorVBox);
 
         return;
     }
 
+    /**
+     * Creates and adds a VBox for the locations the movie was filmed at to the report.
+     * @param paneBox The HBox for the report the locations VBox will be added to
+     * @param movie the movie to populate the locations for.
+     */
     void getLocationsPane(HBox paneBox, Movie movie) {
 
         ScrollPane LocationsPane = new ScrollPane();
         LocationsPane.setPrefHeight(250);
-        LocationsPane.setMaxWidth(400);
+        LocationsPane.setMaxWidth(300);
 
         VBox locationsVBox = new VBox();
 
@@ -572,6 +717,8 @@ public class MovieRatingsApp extends Application {
                     + mId;
 
             ResultSet result = stmt.executeQuery(query);
+            
+            int locCount = 0;
 
             while (result.next()) {
                 String text = "";
@@ -592,12 +739,21 @@ public class MovieRatingsApp extends Application {
                 }
 
                 if (text != "") {
+                    locCount++;
                     Label locationLabel = new Label(text);
                     locationLabel.setPadding(new Insets(5));
 
                     locationsVBox.getChildren().add(locationLabel);
                 }
 
+            }
+            
+            if (locCount == 0) {
+                
+                Label locationLabel = new Label("No filming location data available");
+                locationLabel.setPadding(new Insets(5));
+                locationsVBox.getChildren().add(locationLabel);
+                
             }
 
         } catch (SQLException e) {
@@ -608,20 +764,34 @@ public class MovieRatingsApp extends Application {
 
         Label locationsLabel = new Label("Filming Locations");
         locationsLabel.setFont(new Font(15));
-        locationsLabel.setMaxWidth(400);
+        locationsLabel.setMaxWidth(300);
         locationsLabel.setAlignment(Pos.BASELINE_CENTER);
         locationsLabel.setPadding(new Insets(5));
 
         VBox locationPaneVBox = new VBox();
         locationPaneVBox.getChildren().addAll(locationsLabel, LocationsPane);
-        locationPaneVBox.setPrefWidth(400);
+        locationPaneVBox.setPrefWidth(300);
 
         paneBox.getChildren().add(locationPaneVBox);
     }
 
-    private void getMoviesByActor(String searchFieldText, ObservableList<Movie> listMovies) {
+    /**
+     * Searches the database for the movies an actor was in. Used when a user clicks a link for 
+     * an actor in the report, or when a user searches for an actor with the search bar.
+     * @param searchFieldText The string to search for based on the actor's name
+     * @param listMovies The ObservableList to add the movies to that will be used to display the results.
+     * @param includeSimilar set to one to include actors with a name like the search term, false for exact matches only
+     */
+    private void getMoviesByActor(String searchFieldText, ObservableList<Movie> listMovies, boolean includeSimilar) {
 
-        String query = "{CALL GetByActor(?)}";
+        String query = "";
+        
+        if (includeSimilar) {
+            query = "{CALL GetByActor(?)}";
+        }
+        else {
+            query = "{CALL GetByExactActor(?)}";
+        }
 
         try {
             CallableStatement stmt = conn.prepareCall(query);
@@ -634,7 +804,6 @@ public class MovieRatingsApp extends Application {
                 double critRate = rs.getDouble("CRITIC_RATE");
                 double audRate = rs.getDouble("AUD_RATE");
                 int audCount = rs.getInt("AUD_COUNT");
-                String dirId = rs.getString("DIR_ID");
                 String director = rs.getString("DIR_NAME");
 
                 List<String> actors = new ArrayList<String>();
@@ -642,7 +811,7 @@ public class MovieRatingsApp extends Application {
                 if (mId > 0) {
                     String actQuery =
                         "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
-                            + mId + " Order by Ranking DESC limit 3";
+                            + mId + " Order by Ranking DESC";
                     CallableStatement stmt2 = conn.prepareCall(actQuery);
                     ResultSet rs2 = stmt2.executeQuery(actQuery);
                     while (rs2.next()) {
@@ -660,7 +829,55 @@ public class MovieRatingsApp extends Application {
         }
     }
 
+    /**
+     * Searches the database for movies with a given genre. Used when a user clicks a link for 
+     * a genre in the report.
+     * @param genre The title of the genre
+     * @param listMovies The ObservableList to add the movies to that will be used to display the results.
+     */
+    private void getMoviesByGenre(String genre, ObservableList<Movie> listMovies) {
 
+        String query = "{CALL GetByGenre(?)}";
+
+        try {
+            CallableStatement stmt = conn.prepareCall(query);
+            stmt.setString(1, genre);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                int mId = rs.getInt("MOV_ID");
+                String mName = rs.getString("TITLE");
+                int year = rs.getInt("YEAR");
+                double critRate = rs.getDouble("CRITIC_RATE");
+                double audRate = rs.getDouble("AUD_RATE");
+                int audCount = rs.getInt("AUD_COUNT");
+                String director = rs.getString("DIR_NAME");
+
+                List<String> actors = new ArrayList<String>();
+
+                if (mId > 0) {
+                    String actQuery =
+                        "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
+                            + mId + " Order by Ranking DESC";
+                    CallableStatement stmt2 = conn.prepareCall(actQuery);
+                    ResultSet rs2 = stmt2.executeQuery(actQuery);
+                    while (rs2.next()) {
+                        actors.add(rs2.getString("ACT_NAME"));
+                    }
+                }
+
+                listMovies.add(
+                    new Movie(mId, mName, year, critRate, audRate, audCount, director, actors));
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+     /**
+     * Starts the JavaFx application.
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
 
@@ -951,7 +1168,6 @@ public class MovieRatingsApp extends Application {
                 double critRate;
                 double audRate;
                 int audCount;
-                String dirId;
                 String director;
                 String actQuery;
                 String query;
@@ -959,11 +1175,8 @@ public class MovieRatingsApp extends Application {
 
                 String searchFieldText = searchField.getText();
                 String btnOption = (String) searchOptions.getValue();
-                System.out.println(btnOption);
-                System.out.println(searchFieldText);
                 switch (btnOption) {
                     case "Movie":
-                        System.out.println("I'm searching based on movies");
                         query = "{CALL GetByMovie(?)}";
                         try {
                             CallableStatement stmt = conn.prepareCall(query);
@@ -976,13 +1189,12 @@ public class MovieRatingsApp extends Application {
                                 critRate = rs.getDouble("CRITIC_RATE");
                                 audRate = rs.getDouble("AUD_RATE");
                                 audCount = rs.getInt("AUD_COUNT");
-                                dirId = rs.getString("DIR_ID");
                                 director = rs.getString("DIR_NAME");
                                 actors.clear();
                                 if (mId > 0) {
                                     actQuery =
                                         "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
-                                            + mId + " Order by Ranking DESC limit 3";
+                                            + mId + " Order by Ranking DESC";
                                     CallableStatement stmt2 = conn.prepareCall(actQuery);
                                     ResultSet rs2 = stmt2.executeQuery(actQuery);
                                     while (rs2.next()) {
@@ -1001,15 +1213,12 @@ public class MovieRatingsApp extends Application {
                         break;
 
                     case "Actor":
-
-                        System.out.println("I'm searching based on Actors");
-
-                        getMoviesByActor(searchFieldText, listMovies);
+                        
+                        getMoviesByActor(searchFieldText, listMovies, true);
 
                         break;
 
                     case "Director":
-                        System.out.println("I'm searching based on Directors");
                         query = "{CALL GetByDirector(?)}";
                         try {
                             CallableStatement stmt = conn.prepareCall(query);
@@ -1022,13 +1231,12 @@ public class MovieRatingsApp extends Application {
                                 critRate = rs.getDouble("CRITIC_RATE");
                                 audRate = rs.getDouble("AUD_RATE");
                                 audCount = rs.getInt("AUD_COUNT");
-                                dirId = rs.getString("DIR_ID");
                                 director = rs.getString("DIR_NAME");
                                 actors.clear();
                                 if (mId > 0) {
                                     actQuery =
                                         "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
-                                            + mId + " Order by Ranking DESC limit 3";
+                                            + mId + " Order by Ranking DESC";
                                     CallableStatement stmt2 = conn.prepareCall(actQuery);
                                     ResultSet rs2 = stmt2.executeQuery(actQuery);
                                     while (rs2.next()) {
