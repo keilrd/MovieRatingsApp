@@ -67,13 +67,14 @@ public class SearchRecords {
 		if (userQuery.length == 0) {
 			query = "SELECT * FROM " + recordType;
 		} else {
-			String queryLine = "SELECT * FROM " + recordType + " WHERE " + searchCol + " ";
+			String queryLine = "SELECT * FROM " + recordType + " WHERE ";
+			query = queryLine;
 			for (int i = 0; i < userQuery.length; i++) {
-				query = query + queryLine + "LIKE '%" + userQuery[i] + "%'";
+				query = query + searchCol + " " + "LIKE '%" + userQuery[i] + "%'";
 				if (i < userQuery.length - 1) {
-					query = query + " INTERSECT ";
+					query = query + " AND ";
 				} else {
-					query = query + ";";
+					query = query + "ORDER BY " + searchCol + ";";
 				}
 			}
 			
