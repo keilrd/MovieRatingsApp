@@ -143,8 +143,6 @@ public class MovieRatingsApp extends Application {
 
     private VBox getReport(Movie movie, VBox reportBox) {
 
-        // TODO update report when logged in
-
         reportBox.getChildren().clear();
         reportBox.setPadding(new Insets(10, 20, 10, 20));
         reportBox.setPrefWidth(1200);
@@ -846,7 +844,7 @@ public class MovieRatingsApp extends Application {
 
         // logout menu button action
         logout.setOnAction(new EventHandler<ActionEvent>() {
-            //TODO hide rating if you log out
+            
             public void handle(ActionEvent event) {
                 loggedIn = false;
                 loggedInName = "";
@@ -858,6 +856,11 @@ public class MovieRatingsApp extends Application {
 
                 topBar.getChildren().remove(userLabel);
                 topBar.getChildren().addAll(userTextField, userPwField, loginBtn, createBtn);
+                
+                if (movieTable.getSelectionModel().getSelectedItem() != null) {
+                    getReport(movieTable.getSelectionModel().getSelectedItem(),
+                        movieReport);
+                }
 
             }
         });
