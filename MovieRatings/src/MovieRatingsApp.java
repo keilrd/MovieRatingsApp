@@ -749,8 +749,13 @@ public class MovieRatingsApp extends Application {
         Button searchBtn = new Button();
         searchBtn.setText("Search");
         searchBtn.setMinWidth(70);
+        
+        Button searchfavBtn = new Button();
+        searchfavBtn.setText("Search Favorites");
+        searchfavBtn.setMinWidth(90);
+        searchfavBtn.setVisible(loggedIn);
 
-        searchBar.getChildren().addAll(searchField, searchOptions, searchBtn);
+        searchBar.getChildren().addAll(searchField, searchOptions, searchBtn, searchfavBtn);
 
         // scrollable grid
         ScrollPane movieGridScroll = new ScrollPane();
@@ -861,6 +866,8 @@ public class MovieRatingsApp extends Application {
                 } catch (SQLException e) {
                     System.out.println(e);
                 }
+                
+                searchfavBtn.setVisible(loggedIn);
 
             }
         });
@@ -907,6 +914,7 @@ public class MovieRatingsApp extends Application {
                 if (movieTable.getSelectionModel().getSelectedItem() != null) {
                     getReport(movieTable.getSelectionModel().getSelectedItem(), movieReport);
                 }
+                searchfavBtn.setVisible(loggedIn);
 
             }
         });
@@ -976,7 +984,6 @@ public class MovieRatingsApp extends Application {
                             }
 
                         } catch (SQLException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                         break;
@@ -1034,6 +1041,15 @@ public class MovieRatingsApp extends Application {
                 return;
             }
         });
+        
+        createBtn.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event) {
+                //TODO add search call
+
+                
+            }
+        });
+        
         // Set stage
         primaryStage.setMinWidth(600);
         primaryStage.setMinHeight(400);
