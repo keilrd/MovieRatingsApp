@@ -157,8 +157,6 @@ public class CreateUserPopup {
 		acceptBtn.setOnAction(new EventHandler<ActionEvent>() {
 			public void handle(ActionEvent event) {
 				boolean error = false;
-				//TODO try to save the user to database
-				//TODO update userValue
 				int checkUser = 0;
 				String query = "";
 				
@@ -175,7 +173,10 @@ public class CreateUserPopup {
 					//passwords do not match
 					AlertPopup.display("Error", "Passwords do not match!", "Go back");
 					error = true;
-				} else if (!error) {
+				}else if (favGenreValue.compareTo("") == 0 || favDirValue.compareTo("") == 0|| favActorValue.compareTo("") == 0) {
+					AlertPopup.display("Error","Favorites are required!","Go back");
+					error = true;
+				}else if (!error) {
 					
 					query = "SELECT user_id FROM users WHERE username = '" + userNameField.getText() + "';";
 					try (Statement stmt = conn.createStatement()){
@@ -218,6 +219,8 @@ public class CreateUserPopup {
 							e.printStackTrace();
 						}
 						
+						userValues[0] = String.valueOf(userId);
+						userValues[1] = userNameValue;
 						
 					} else {
 						String queryMax = "SELECT MAX(user_id) FROM users;";

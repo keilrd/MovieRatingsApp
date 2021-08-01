@@ -881,6 +881,16 @@ public class MovieRatingsApp extends Application {
                     loggedInId = Integer.parseInt(newUserValue[0]);
                     loggedInName = newUserValue[1];
                     loggedIn = true;
+                    
+                    profile.setDisable(false);
+                    logout.setDisable(false);
+
+                    userLabel.setText("Welcome " + loggedInName);
+
+                    // remove the login fields/buttons and show welcome message
+                    topBar.getChildren().removeAll(userTextField, userPwField, loginBtn,
+                        createBtn);
+                    topBar.getChildren().add(userLabel);
                 }
             }
         });
@@ -892,6 +902,8 @@ public class MovieRatingsApp extends Application {
                 String[] updateUserValue = CreateUserPopup.display(conn, true, loggedInId);
                 if (updateUserValue[1].compareTo(loggedInName) != 0) {
                     loggedInName = updateUserValue[1];
+                    userLabel.setText("Welcome " + loggedInName);
+                    
                 }
             }
         });
@@ -1030,7 +1042,6 @@ public class MovieRatingsApp extends Application {
                             }
 
                         } catch (SQLException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                         break;
@@ -1042,10 +1053,59 @@ public class MovieRatingsApp extends Application {
             }
         });
         
-        createBtn.setOnAction(new EventHandler<ActionEvent>() {
+        searchfavBtn.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
-                //TODO add search call
+            	ObservableList<Movie> listMovies = FXCollections.observableArrayList();
+                listMovies.clear();
+                int mId;
+                String mName;
+                int year;
+                double critRate;
+                double audRate;
+                int audCount;
+                String dirId;
+                String director;
+                String actQuery;
+                String query;
+                List<String> actors = new ArrayList<String>();
 
+
+                System.out.println("I'm searching based on favorites");
+                query = "{CALL GetByFavorites(?)}";
+                try {
+                	CallableStatement stmt = conn.prepareCall(query);
+                    stmt.setInt(1, loggedInId);
+                    ResultSet rs = stmt.executeQuery();
+                    while (rs.next()) {
+                    	mId = rs.getInt("MOV_ID");
+                        mName = rs.getString("TITLE");
+                        year = rs.getInt("YEAR");
+                        critRate = rs.getDouble("CRITIC_RATE");
+                        audRate = rs.getDouble("AUD_RATE");
+                        audCount = rs.getInt("AUD_COUNT");
+                        dirId = rs.getString("DIR_ID");
+                        director = rs.getString("DIR_NAME");
+                        actors.clear();
+                        if (mId > 0) {
+                        	actQuery = "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
+                        			+ mId + " Order by Ranking DESC limit 3";
+                            CallableStatement stmt2 = conn.prepareCall(actQuery);
+                            ResultSet rs2 = stmt2.executeQuery(actQuery);
+                            while (rs2.next()) {
+                            	actors.add(rs2.getString("ACT_NAME"));
+                            }
+                        }
+
+                        listMovies.add(new Movie(mId, mName, year, critRate, audRate,
+                              audCount, director, actors));
+
+                    }
+
+                } catch (SQLException e) {
+                	e.printStackTrace();
+                }
+
+                movieTable.setItems(listMovies);
                 
             }
         });
