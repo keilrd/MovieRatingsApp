@@ -588,7 +588,7 @@ public class MovieRatingsApp extends Application {
 
         ScrollPane genresPane = new ScrollPane();
         genresPane.setPrefHeight(250);
-        genresPane.setMaxWidth(250);
+        genresPane.setMaxWidth(200);
 
         VBox genresVBox = new VBox();
 
@@ -641,13 +641,13 @@ public class MovieRatingsApp extends Application {
 
         Label genresLabel = new Label("Genres");
         genresLabel.setFont(new Font(15));
-        genresLabel.setMaxWidth(250);
+        genresLabel.setMaxWidth(200);
         genresLabel.setAlignment(Pos.BASELINE_CENTER);
         genresLabel.setPadding(new Insets(5));
 
         VBox genreVBox = new VBox();
         genreVBox.getChildren().addAll(genresLabel, genresPane);
-        genreVBox.setPrefWidth(250);
+        genreVBox.setPrefWidth(200);
 
         paneBox.getChildren().add(genreVBox);
 
@@ -664,7 +664,7 @@ public class MovieRatingsApp extends Application {
 
         ScrollPane actorsPane = new ScrollPane();
         actorsPane.setPrefHeight(250);
-        actorsPane.setMaxWidth(250);
+        actorsPane.setMaxWidth(200);
 
         VBox actorsVBox = new VBox();
 
@@ -688,13 +688,13 @@ public class MovieRatingsApp extends Application {
 
         Label actorsLabel = new Label("Actors");
         actorsLabel.setFont(new Font(15));
-        actorsLabel.setMaxWidth(250);
+        actorsLabel.setMaxWidth(200);
         actorsLabel.setAlignment(Pos.BASELINE_CENTER);
         actorsLabel.setPadding(new Insets(5));
 
         VBox actorVBox = new VBox();
         actorVBox.getChildren().addAll(actorsLabel, actorsPane);
-        actorVBox.setPrefWidth(250);
+        actorVBox.setPrefWidth(200);
 
         paneBox.getChildren().add(actorVBox);
 
@@ -710,7 +710,7 @@ public class MovieRatingsApp extends Application {
 
         ScrollPane LocationsPane = new ScrollPane();
         LocationsPane.setPrefHeight(250);
-        LocationsPane.setMaxWidth(300);
+        LocationsPane.setMaxWidth(400);
 
         VBox locationsVBox = new VBox();
 
@@ -770,13 +770,13 @@ public class MovieRatingsApp extends Application {
 
         Label locationsLabel = new Label("Filming Locations");
         locationsLabel.setFont(new Font(15));
-        locationsLabel.setMaxWidth(300);
+        locationsLabel.setMaxWidth(400);
         locationsLabel.setAlignment(Pos.BASELINE_CENTER);
         locationsLabel.setPadding(new Insets(5));
 
         VBox locationPaneVBox = new VBox();
         locationPaneVBox.getChildren().addAll(locationsLabel, LocationsPane);
-        locationPaneVBox.setPrefWidth(300);
+        locationPaneVBox.setPrefWidth(400);
 
         paneBox.getChildren().add(locationPaneVBox);
     }
@@ -1199,8 +1199,8 @@ public class MovieRatingsApp extends Application {
                                 actors.clear();
                                 if (mId > 0) {
                                     actQuery =
-                                        "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
-                                            + mId + " Order by Ranking DESC";
+                                        "SELECT act_name FROM movie_actors ma, actors a WHERE ma.act_id = a.act_id and ma.mov_id = "
+                                            + mId + " Order by ma.Ranking DESC";
                                     CallableStatement stmt2 = conn.prepareCall(actQuery);
                                     ResultSet rs2 = stmt2.executeQuery(actQuery);
                                     while (rs2.next()) {
@@ -1241,8 +1241,8 @@ public class MovieRatingsApp extends Application {
                                 actors.clear();
                                 if (mId > 0) {
                                     actQuery =
-                                        "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
-                                            + mId + " Order by Ranking DESC";
+                                        "SELECT act_name FROM movie_actors ma, actors a WHERE ma.act_id = a.act_id and ma.mov_id = "
+                                            + mId + " Order by ma.Ranking DESC";
                                     CallableStatement stmt2 = conn.prepareCall(actQuery);
                                     ResultSet rs2 = stmt2.executeQuery(actQuery);
                                     while (rs2.next()) {
@@ -1301,8 +1301,8 @@ public class MovieRatingsApp extends Application {
                         director = rs.getString("DIR_NAME");
                         actors.clear();
                         if (mId > 0) {
-                        	actQuery = "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
-                        			+ mId + " Order by Ranking DESC limit 3";
+                        	actQuery = "SELECT act_name FROM movie_actors ma, actors a WHERE ma.act_id = a.act_id and ma.mov_id = "
+                        			+ mId + " Order by ma.Ranking DESC";
                             CallableStatement stmt2 = conn.prepareCall(actQuery);
                             ResultSet rs2 = stmt2.executeQuery(actQuery);
                             while (rs2.next()) {
