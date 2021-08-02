@@ -150,15 +150,17 @@ public class MovieRatingsApp extends Application {
      */
     private VBox getReport(Movie movie, VBox reportBox) {
 
-        reportBox.getChildren().clear();
+        reportBox.getChildren().clear(); // clear the report to reload
         reportBox.setPadding(new Insets(10, 20, 10, 20));
         reportBox.setPrefWidth(1200);
 
+        // display message if no movie is selected
         if (movie == null) {
             reportBox.getChildren().add(new Label("Select a movie to view information"));
             return reportBox;
         }
 
+        // add movie title and director to top of report
         HBox title = new HBox();
         title.setAlignment(Pos.BOTTOM_LEFT);
         title.setPadding(new Insets(0, 0, 5, 0));
@@ -172,17 +174,18 @@ public class MovieRatingsApp extends Application {
 
         reportBox.getChildren().add(title);
 
+        // add HBox for ratings, actors, genres, and locations
         HBox paneBox = new HBox();
         paneBox.setPrefWidth(1200);
 
-        VBox ratingsPane = getRatingsPane(paneBox, movie);
-        getActorsPane(paneBox, movie);
-        getGenresPane(paneBox, movie);
-        getLocationsPane(paneBox, movie);
+        VBox ratingsPane = getRatingsPane(paneBox, movie); // column for ratings
+        getActorsPane(paneBox, movie); // column for actors)
+        getGenresPane(paneBox, movie); // column for genres
+        getLocationsPane(paneBox, movie); // column for location data
 
-        reportBox.getChildren().add(paneBox);
+        reportBox.getChildren().add(paneBox); // add HBox with 4 columns
 
-        // add user rating
+        // add user rating if someone is logged in
         if (loggedIn) {
             displayUserRating(reportBox, movie, ratingsPane);
         }
@@ -199,21 +202,22 @@ public class MovieRatingsApp extends Application {
      */
     VBox getRatingsPane(HBox paneBox, Movie movie) {
 
+        // create VBox for ratings column
         VBox ratingsVBox = new VBox();
         ratingsVBox.setPrefWidth(400);
         ratingsVBox.setAlignment(Pos.CENTER);
 
-
+        // add labels and images for critic and audience ratings
         displayRating(movie.getMovieCriticRating(), 10, ratingsVBox, "Critic Rating");
         displayRating(movie.getMovieAudRating(), 5, ratingsVBox, "Audience Rating");
         
-        // add count of audience ratings
+        // add count of audience ratings to the end
         Label audCountLabel = new Label(movie.getMovieAudCount() + " audience ratings");
         ratingsVBox.getChildren().add(audCountLabel);
 
-        paneBox.getChildren().add(ratingsVBox);
+        paneBox.getChildren().add(ratingsVBox); // add the ratings column to the report
 
-        return ratingsVBox;
+        return ratingsVBox; // return the ratings column so we can use it when a user updates their rating
     }
 
     /**
@@ -225,30 +229,33 @@ public class MovieRatingsApp extends Application {
      */
     private void displayRating(double rating, double total, VBox ratingsVBox, String label) {
 
-        Label ratingLabel = new Label(label + " (" + rating + "/" + total + ")");
+        Label ratingLabel = new Label(label + " (" + rating + "/" + total + ")"); // label to display rating title and number
         ratingLabel.setFont(new Font(20));
         ratingLabel.setMaxWidth(400);
         ratingLabel.setAlignment(Pos.BASELINE_CENTER);
         ratingLabel.setPadding(new Insets(5));
 
-        HBox ratingHBox = new HBox();
+        HBox ratingHBox = new HBox(); // add stars image
         ratingHBox.setPrefWidth(400);
         ratingHBox.setPadding(new Insets(0, 0, 10, 0));
 
-        rating = Math.round(rating);
+        rating = Math.round(rating); // round the rating to use to display stars
 
         int i = 0;
 
+        // add filled in stars
         while (i < rating) {
             ratingHBox.getChildren().add(getStarImage(total));
             i++;
         }
 
+        // add empty stars
         while (i < total) {
             ratingHBox.getChildren().add(getEmptyStarImage(total));
             i++;
         }
 
+        // at the the ratings column
         ratingsVBox.getChildren().addAll(ratingLabel, ratingHBox);
 
 
@@ -263,23 +270,24 @@ public class MovieRatingsApp extends Application {
      */
     private void displayUserRating(VBox reportBox, Movie movie, VBox ratingsPane) {
 
-        int rating = getUserRating(movie);
+        int rating = getUserRating(movie); // get the user's current rating for the movie
 
+        // display the rating in a label
         Label ratingLabel = new Label("My Rating (" + rating + "/5)");
         ratingLabel.setFont(new Font(25));
         ratingLabel.setMaxWidth(400);
         ratingLabel.setAlignment(Pos.CENTER);
         ratingLabel.setPadding(new Insets(5));
 
+        // create HBox for stars for user's rating
         HBox ratingHBox = new HBox();
         ratingHBox.setPrefWidth(1200);
         ratingHBox.setPadding(new Insets(0, 0, 10, 0));
         ratingHBox.setAlignment(Pos.CENTER);
 
         ratingHBox.getChildren().add(ratingLabel);
-
-        rating = Math.round(rating);
-
+        
+        // display stars
         int i = 0;
 
         while (i < rating) {
@@ -288,24 +296,25 @@ public class MovieRatingsApp extends Application {
             final int newRating = i + 1;
 
             starImage.setPickOnBounds(true);
-
+            
+            // clicking star changes the rating to that number of stars
             starImage.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
 
                 @Override
                 public void handle(MouseEvent event) {
 
-                    updateUserRating(newRating, ratingHBox, movie, ratingsPane); // TODO test that instant and
-                                                                    // rating are updated in
-                                                                    // database
+                    updateUserRating(newRating, ratingHBox, movie, ratingsPane);
+                                                                   
                     event.consume();
 
                 }
             });
 
-            ratingHBox.getChildren().add(starImage);
+            ratingHBox.getChildren().add(starImage); // add stars to HBox
             i++;
         }
 
+        // add empty stars
         while (i < 5) {
 
             ImageView emptyStarImage = getEmptyStarImage(5);
@@ -313,6 +322,7 @@ public class MovieRatingsApp extends Application {
 
             emptyStarImage.setPickOnBounds(true);
 
+            // clicking an empty star increases the rating to that number of stars
             emptyStarImage.addEventHandler(MouseEvent.MOUSE_CLICKED,
                 new EventHandler<MouseEvent>() {
 
@@ -324,7 +334,9 @@ public class MovieRatingsApp extends Application {
 
                     }
                 });
-            ratingHBox.getChildren().add(emptyStarImage);
+            
+            ratingHBox.getChildren().add(emptyStarImage); // add stars to Hbox
+            
             i++;
         }
 
@@ -347,6 +359,7 @@ public class MovieRatingsApp extends Application {
 
         int mId = movie.getMovieID();
 
+        // get current time to save time stamp of the rating
         LocalDateTime now = LocalDateTime.now();
         int year = now.getYear();
         int month = now.getMonthValue();
@@ -370,7 +383,6 @@ public class MovieRatingsApp extends Application {
             if (result.next()) {
                 
                 oldUserRating = result.getFloat("Rating");
-                //HERE
 
                 String updateQuery =
                     "update user_ratings set Rating = ?, Time_day = ?, Time_month = ?, Time_year = ?, Time_hour = ?, Time_min = ?, Time_sec = ? WHERE user_ID = ? and mov_id = ?";
@@ -427,8 +439,7 @@ public class MovieRatingsApp extends Application {
             movPreparedStmt.execute();
 
 
-            // update user rating display
-            
+            // update user rating display after a user rates a movie
             Label userRateLabel = (Label) userRatingHBox.getChildren().get(0); // user rating label
             userRateLabel.setText( "My Rating (" + newRating + "/5)");
             
@@ -461,27 +472,27 @@ public class MovieRatingsApp extends Application {
                 Label audRateLabel = (Label) ratingsPane.getChildren().get(2); // label for avg audience rating
                 audRateLabel.setText( "Audience Rating (" + movie.getMovieAudRating() + "/5.0)");
                 
-                HBox audRateHBox = (HBox) ratingsPane.getChildren().get(3);
+                HBox audRateHBox = (HBox) ratingsPane.getChildren().get(3); // HBox with stars
                 
                 for (int i = 0; i < 5; i++) {
 
-                    ImageView image = (ImageView) audRateHBox.getChildren().get(i);
+                    ImageView image = (ImageView) audRateHBox.getChildren().get(i); // get the current star
 
                     if (i < movie.getMovieAudRating()) {
 
-                        image.setImage(STAR);
+                        image.setImage(STAR); // add star up to the rating value
                     }
 
                     else {
 
-                        image.setImage(EMPTY_STAR);
+                        image.setImage(EMPTY_STAR); // add empty stars at the end
                     }
                     
                 }
             }
 
         } catch (SQLException e) {
-            System.out.println(e); // TODO error about unable to update?
+            System.out.println(e);
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -501,7 +512,7 @@ public class MovieRatingsApp extends Application {
 
         try {
             starImage = new ImageView(STAR);
-            starImage.setFitWidth(400 / total);
+            starImage.setFitWidth(400 / total); // size stars based on how many need to display
             starImage.setPreserveRatio(true);
 
         } catch (NullPointerException e) {
@@ -528,7 +539,7 @@ public class MovieRatingsApp extends Application {
 
         try {
             starImage = new ImageView(EMPTY_STAR);
-            starImage.setFitWidth(400 / total);
+            starImage.setFitWidth(400 / total); // size image based on the number that need to display
             starImage.setPreserveRatio(true);
 
 
@@ -552,8 +563,9 @@ public class MovieRatingsApp extends Application {
     private int getUserRating(Movie movie) {
 
         int mId = movie.getMovieID();
-        int rating = 0;
+        int rating = 0; // default rating to 0 stars
 
+        // get user rating from database
         try (Statement stmt = conn.createStatement()) {
 
             String query = "SELECT Rating FROM user_ratings WHERE User_id = " + loggedInId
