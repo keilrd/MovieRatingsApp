@@ -720,6 +720,14 @@ public class MovieRatingsApp extends Application {
 
             actorsVBox.getChildren().add(actorLink);
         }
+        
+        if (movie.actors.size() == 0) {
+            
+            Label noActorsLabel = new Label("No actors listed");
+            noActorsLabel.setPadding(new Insets(5));
+            actorsVBox.getChildren().add(noActorsLabel);
+            
+        }
 
         actorsPane.setContent(actorsVBox);
 
