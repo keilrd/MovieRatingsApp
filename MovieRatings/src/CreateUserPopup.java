@@ -7,8 +7,12 @@ import javafx.event.EventHandler;
 import javafx.geometry.*;
 import java.sql.*;
 
+
+/**
+ * Class for the create user and edit profile popup
+ *
+ */
 public class CreateUserPopup {
-	
 	
 	static volatile String userNameValue = "";
 	static volatile String userPassValue = "";
@@ -309,7 +313,7 @@ public class CreateUserPopup {
 			buttonHbox
 		);
 		popLayout.setAlignment(Pos.CENTER);
-		
+		 
 		Scene scene = new Scene(popLayout);
 		window.setScene(scene);
 		window.showAndWait();

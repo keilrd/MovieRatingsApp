@@ -31,7 +31,7 @@ import java.util.Random;
  */
 public class MovieRatingsApp extends Application {
 
-    String searches[] = {"Movie", "Actor", "Director"}; // options to search the database
+    String searches[] = {"Movie", "Actor", "Director","Genre"}; // options to search the database
     Connection conn; // the connection to the mySQL database
     boolean loggedIn = false; // boolean to keep track of whether or not someone is logged in
     String loggedInName = ""; // username for the logged in user
@@ -1296,6 +1296,41 @@ public class MovieRatingsApp extends Application {
                             e.printStackTrace();
                         }
                         break;
+                    case "Genre":
+                    	query = "{CALL GetByGenre(?)}";
+                        try {
+                            CallableStatement stmt = conn.prepareCall(query);
+                            stmt.setString(1, searchFieldText);
+                            ResultSet rs = stmt.executeQuery();
+                            while (rs.next()) {
+                                mId = rs.getInt("MOV_ID");
+                                mName = rs.getString("TITLE");
+                                year = rs.getInt("YEAR");
+                                critRate = rs.getDouble("CRITIC_RATE");
+                                audRate = rs.getDouble("AUD_RATE");
+                                audCount = rs.getInt("AUD_COUNT");
+                                director = rs.getString("DIR_NAME");
+                                actors.clear();
+                                if (mId > 0) {
+                                    actQuery =
+                                        "SELECT act_name FROM movie_actors ma, actors a WHERE ma.act_id = a.act_id and ma.mov_id = "
+                                            + mId + " Order by ma.Ranking DESC";
+                                    CallableStatement stmt2 = conn.prepareCall(actQuery);
+                                    ResultSet rs2 = stmt2.executeQuery(actQuery);
+                                    while (rs2.next()) {
+                                        actors.add(rs2.getString("ACT_NAME"));
+                                    }
+                                }
+
+                                listMovies.add(new Movie(mId, mName, year, critRate, audRate,
+                                    audCount, director, actors));
+
+                            }
+
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                        break;
                     default:
                         break;
                 }
@@ -1320,8 +1355,6 @@ public class MovieRatingsApp extends Application {
                 String query;
                 List<String> actors = new ArrayList<String>();
 
-
-                System.out.println("I'm searching based on favorites");
                 query = "{CALL GetByFavorites(?)}";
                 try {
                 	CallableStatement stmt = conn.prepareCall(query);
