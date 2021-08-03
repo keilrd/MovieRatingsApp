@@ -342,18 +342,19 @@ public class MovieRatingsApp extends Application {
         }
 
         // if there's a rating, display the time the user left it
+        Label timeLabel = new Label();
+        timeLabel.setPrefWidth(160);
+        timeLabel.setPrefHeight(80);
+        timeLabel.setAlignment(Pos.BOTTOM_LEFT);
+        
         if (rating > 0) {
-            String timeLabelStr = timestamp[1] + "/" + timestamp[0] + "/" + timestamp[2] + " at " + timestamp[3] + ":" + timestamp[4];
-            Label timeLabel = new Label(timeLabelStr);
-            ratingHBox.getChildren().add(timeLabel);
+            
+            timeLabel.setText(timestamp[1] + "/" + timestamp[0] + "/" + timestamp[2] + " at " + timestamp[3] + ":" + timestamp[4]);
+              
         }
-        
-        // otherwise, add a blank label so we have it to update when they do leave a rating
-        else {
-            ratingHBox.getChildren().add(new Label());
-        }
-        
-        
+
+        ratingHBox.getChildren().add(timeLabel);
+                
         reportBox.getChildren().addAll(ratingHBox);
 
 
