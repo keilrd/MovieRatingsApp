@@ -270,7 +270,8 @@ public class MovieRatingsApp extends Application {
      */
     private void displayUserRating(VBox reportBox, Movie movie, VBox ratingsPane) {
 
-        int rating = getUserRating(movie); // get the user's current rating for the movie
+        int[] timestamp = {0, 0, 0, 0, 0, 0};
+        int rating = getUserRating(movie, timestamp); // get the user's current rating for the movie
 
         // display the rating in a label
         Label ratingLabel = new Label("My Rating (" + rating + "/5)");
@@ -340,6 +341,19 @@ public class MovieRatingsApp extends Application {
             i++;
         }
 
+        // if there's a rating, display the time the user left it
+        if (rating > 0) {
+            String timeLabelStr = timestamp[1] + "/" + timestamp[0] + "/" + timestamp[2] + " at " + timestamp[3] + ":" + timestamp[4];
+            Label timeLabel = new Label(timeLabelStr);
+            ratingHBox.getChildren().add(timeLabel);
+        }
+        
+        // otherwise, add a blank label so we have it to update when they do leave a rating
+        else {
+            ratingHBox.getChildren().add(new Label());
+        }
+        
+        
         reportBox.getChildren().addAll(ratingHBox);
 
 
@@ -466,6 +480,10 @@ public class MovieRatingsApp extends Application {
                     audCountLabel.setText(movie.getMovieAudCount() + " audience ratings");
             }
             
+            // update the timestamp displayed
+            Label ratingTime = (Label) userRatingHBox.getChildren().get(6);
+            ratingTime.setText(month + "/" + day + "/" + year + " at " + hour + ":" + minute);
+            
             // update audience rating display if the average rating changed
             if (changed) {
                 
@@ -558,9 +576,10 @@ public class MovieRatingsApp extends Application {
     /**
      * Gets the logged in user's rating for a movie from the mySQL database
      * @param movie the movie to get the rating for
+     * @param timestamp array of date information from when the rating was placed - day, month, year, hour, minute, second
      * @return the rating the user left for the move. 0 If they haven't left a rating for the movie.
      */
-    private int getUserRating(Movie movie) {
+    private int getUserRating(Movie movie, int[] timestamp) {
 
         int mId = movie.getMovieID();
         int rating = 0; // default rating to 0 stars
@@ -568,7 +587,7 @@ public class MovieRatingsApp extends Application {
         // get user rating from database
         try (Statement stmt = conn.createStatement()) {
 
-            String query = "SELECT Rating FROM user_ratings WHERE User_id = " + loggedInId
+            String query = "SELECT Rating, Time_day, Time_month, Time_year, Time_hour, Time_min, Time_sec FROM user_ratings WHERE User_id = " + loggedInId
                 + " and mov_id = " + mId;
 
             ResultSet result = stmt.executeQuery(query);
@@ -576,11 +595,17 @@ public class MovieRatingsApp extends Application {
             while (result.next()) {
 
                 rating = result.getInt("Rating");
+                timestamp[0] = result.getInt("Time_day");
+                timestamp[1] = result.getInt("Time_month");
+                timestamp[2] = result.getInt("Time_year");
+                timestamp[3] = result.getInt("Time_hour");
+                timestamp[4] = result.getInt("Time_min");
+                timestamp[5] = result.getInt("Time_sec");
+                
 
             }
 
-
-
+            
         } catch (SQLException e) {
             System.out.println(e);
         } catch (Exception e) {
