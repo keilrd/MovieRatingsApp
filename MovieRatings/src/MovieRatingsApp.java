@@ -41,6 +41,8 @@ public class MovieRatingsApp extends Application {
 
     TableView<Movie> movieTable = new TableView<Movie>(); // view to display movies found in the database
     ObservableList<Movie> movieData = FXCollections.observableArrayList(); // list of movies to display
+    
+    Movie selectedMovie;
 
     /**
      * Main method. Calls start to run the application
@@ -1061,7 +1063,8 @@ public class MovieRatingsApp extends Application {
         movieTable.setOnMouseClicked((MouseEvent event) -> {
             if (event.getClickCount() > 0) {
                 if (movieTable.getSelectionModel().getSelectedItem() != null) {
-                    getReport(movieTable.getSelectionModel().getSelectedItem(), movieReport);
+                    selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+                    getReport(selectedMovie, movieReport);
                 }
             }
         });
@@ -1069,7 +1072,8 @@ public class MovieRatingsApp extends Application {
         // set default selection and report content
         if (movieTable.getItems().size() > 0) {
             movieTable.getSelectionModel().selectFirst();
-            getReport(movieTable.getSelectionModel().getSelectedItem(), movieReport);
+            selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+            getReport(selectedMovie, movieReport);
         }
 
         parentVbox.getChildren().addAll(topBar, searchBar, movieGridScroll, movieReport);
@@ -1120,6 +1124,8 @@ public class MovieRatingsApp extends Application {
                         if (movieTable.getSelectionModel().getSelectedItem() != null) {
                             getReport(movieTable.getSelectionModel().getSelectedItem(),
                                 movieReport);
+                        } else if (selectedMovie != null) {
+                            getReport(selectedMovie, movieReport);
                         }
 
                     } else {
@@ -1194,6 +1200,11 @@ public class MovieRatingsApp extends Application {
                 if (movieTable.getSelectionModel().getSelectedItem() != null) {
                     getReport(movieTable.getSelectionModel().getSelectedItem(), movieReport);
                 }
+                
+                else if (selectedMovie != null) {
+                    getReport(selectedMovie, movieReport);
+                }
+                
                 searchfavBtn.setVisible(loggedIn);
 
             }
