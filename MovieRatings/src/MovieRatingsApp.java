@@ -1166,6 +1166,8 @@ public class MovieRatingsApp extends Application {
                         createBtn);
                     topBar.getChildren().add(userLabel);
                 }
+                
+                searchfavBtn.setVisible(loggedIn);
             }
         });
 
