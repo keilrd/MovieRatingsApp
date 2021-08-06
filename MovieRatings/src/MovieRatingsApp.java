@@ -1423,6 +1423,14 @@ public class MovieRatingsApp extends Application {
 
                 movieTable.setItems(listMovies);
                 
+                if (movieTable.getItems().size() > 0) {
+                    movieTable.getSelectionModel().selectFirst();
+                    selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+                    getReport(selectedMovie, movieReport);
+                } else {
+                	getReport(null,movieReport);
+                }
+                
             }
         });
         
