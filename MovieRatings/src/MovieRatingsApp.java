@@ -350,8 +350,13 @@ public class MovieRatingsApp extends Application {
         
         if (rating > 0) {
             
-            timeLabel.setText(timestamp[1] + "/" + timestamp[0] + "/" + timestamp[2] + " at " + timestamp[3] + ":" + timestamp[4]);
-              
+            //timeLabel.setText(timestamp[1] + "/" + timestamp[0] + "/" + timestamp[2] + " at " + timestamp[3] + ":" + timestamp[4]);
+            
+            if (timestamp[4] < 10) {
+            	timeLabel.setText(timestamp[1] + "/" + timestamp[0] + "/" + timestamp[2] + " at " + timestamp[3] + ":0" + timestamp[4]);
+            }else {
+            	timeLabel.setText(timestamp[1] + "/" + timestamp[0] + "/" + timestamp[2] + " at " + timestamp[3] + ":" + timestamp[4]);
+            }
         }
 
         ratingHBox.getChildren().add(timeLabel);
