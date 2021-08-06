@@ -935,7 +935,7 @@ public class MovieRatingsApp extends Application {
     public void start(Stage primaryStage) throws Exception {
 
         conn = getConnection();
-        primaryStage.setTitle("MovieRatings");
+        primaryStage.setTitle("MovieRecommender");
 
         try {
             STAR = new Image(getClass().getResourceAsStream("star.png"));
@@ -1028,9 +1028,8 @@ public class MovieRatingsApp extends Application {
         searchBar.getChildren().addAll(searchField, searchOptions, searchBtn, searchfavBtn);
 
         // scrollable grid
-        ScrollPane movieGridScroll = new ScrollPane();
+        
         movieTable.setEditable(false);
-        movieGridScroll.setContent(movieTable);
         TableColumn<Movie, String> mtitle = new TableColumn<Movie, String>("Title");
         mtitle.setMinWidth(400);
         TableColumn<Movie, Integer> myear = new TableColumn<Movie, Integer>("Year");
@@ -1039,7 +1038,7 @@ public class MovieRatingsApp extends Application {
         director.setMinWidth(200);
         TableColumn<Movie, ArrayList<String>> actors =
             new TableColumn<Movie, ArrayList<String>>("Actors");
-        actors.setMinWidth(495);
+        actors.setMinWidth(485);
 
         mtitle.setCellValueFactory(new PropertyValueFactory<Movie, String>("movieName"));
         myear.setCellValueFactory(new PropertyValueFactory<Movie, Integer>("movieYear"));
@@ -1076,8 +1075,7 @@ public class MovieRatingsApp extends Application {
             getReport(selectedMovie, movieReport);
         }
 
-        parentVbox.getChildren().addAll(topBar, searchBar, movieGridScroll, movieReport);
-
+        parentVbox.getChildren().addAll(topBar, searchBar, movieTable, movieReport);
 
         // button action
         // login button action
@@ -1281,6 +1279,7 @@ public class MovieRatingsApp extends Application {
                     case "Actor":
                         
                         getMoviesByActor(searchFieldText, listMovies, true);
+                        
 
                         break;
 
@@ -1359,6 +1358,15 @@ public class MovieRatingsApp extends Application {
                         break;
                 }
                 movieTable.setItems(listMovies);
+                
+                if (movieTable.getItems().size() > 0) {
+                    movieTable.getSelectionModel().selectFirst();
+                    selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+                    getReport(selectedMovie, movieReport);
+                } else {
+                	getReport(null,movieReport);
+                }
+                
                 return;
             }
         });

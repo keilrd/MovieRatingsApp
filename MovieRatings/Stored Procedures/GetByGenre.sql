@@ -25,8 +25,7 @@ BEGIN
         AND
         m.DIR_ID = d.DIR_ID
 	ORDER BY 
-		m.CRITIC_RATE DESC
-	LIMIT 15;
+		m.CRITIC_RATE DESC;
 END //
 
 DELIMITER ;
