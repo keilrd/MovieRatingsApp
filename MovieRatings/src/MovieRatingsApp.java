@@ -38,6 +38,7 @@ public class MovieRatingsApp extends Application {
     int loggedInId = 0; // user ID for the logged in user
     static Image STAR; // image for filled in stars used for ratings
     static Image EMPTY_STAR; // image for empty in stars used for ratings
+    String[] dbConn; //database connection settings
 
     TableView<Movie> movieTable = new TableView<Movie>(); // view to display movies found in the database
     ObservableList<Movie> movieData = FXCollections.observableArrayList(); // list of movies to display
@@ -61,12 +62,19 @@ public class MovieRatingsApp extends Application {
         Properties connectionProps = new Properties();
 
         // define some database properties
-        connectionProps.put("user", "root");
-        connectionProps.put("password", "12345");
+        connectionProps.put("user", dbConn[2]);
+        connectionProps.put("password", dbConn[3]);
 
         // specify database
-        con = DriverManager.getConnection("jdbc:mysql://localhost:3306/movie_ratings",
+        try{
+        	con = DriverManager.getConnection("jdbc:mysql:" + dbConn[0] + ":" + dbConn[1] + "/movie_ratings",
             connectionProps);
+        } catch (SQLException e) {
+        	//catch any exception and print error in a popup
+        	AlertPopup.display("Error", "Connection failed: " + e, "Exit");
+        	//exit out of the application
+        	System.exit(0);
+        }
 
         return con;
     }
@@ -82,14 +90,15 @@ public class MovieRatingsApp extends Application {
         String dirQuery;
         String actQuery;
         int movieId;
-
+        
+        //find 20 random movies
         while (listMovies.size() < 20) {
             movieId = rand.nextInt(70000 - 1) + 1;
 
             query = "SELECT * FROM movies WHERE mov_id = " + movieId;
 
             try (Statement stmt = conn.createStatement()) {
-                // execute query
+                // execute query for random movie
                 ResultSet rs = stmt.executeQuery(query);
                 int mId;
                 String mName;
@@ -101,10 +110,10 @@ public class MovieRatingsApp extends Application {
                 String director;
                 List<String> actors = new ArrayList<String>();
 
-
+                //if we found a value
                 if (rs.next()) {
                     director = "";
-
+                    //get all values from the query
                     mId = rs.getInt("MOV_ID");
                     mName = rs.getString("TITLE");
                     year = rs.getInt("YEAR");
@@ -112,24 +121,31 @@ public class MovieRatingsApp extends Application {
                     audRate = rs.getDouble("AUD_RATE");
                     audCount = rs.getInt("AUD_COUNT");
                     dirId = rs.getString("DIR_ID");
-
+                    
+                    //if there is a director id find the director name
                     if (dirId.compareTo("") != 0) {
-                        dirQuery = "SELECT dir_name FROM directors WHERE dir_id = '" + dirId + "'";
+                        //query to get director name for the movie
+                    	dirQuery = "SELECT dir_name FROM directors WHERE dir_id = '" + dirId + "'";
                         ResultSet rs2 = stmt.executeQuery(dirQuery);
                         if (rs2.next()) {
                             director = rs2.getString("DIR_NAME");
                         }
                     }
+                    
+                    //if we have a movieid get actors
                     if (mId > 0) {
                         actQuery =
                             "SELECT act_name FROM movie_actors m, actors a WHERE m.act_id = a.act_id and mov_id = "
                                 + mId;
                         ResultSet rs3 = stmt.executeQuery(actQuery);
+                        
+                        //while there are actors add to list of actors
                         while (rs3.next()) {
                             actors.add(rs3.getString("ACT_NAME"));
                         }
                     }
-
+                    
+                    //add movie to list
                     listMovies.add(
                         new Movie(mId, mName, year, critRate, audRate, audCount, director, actors));
                 }
@@ -139,7 +155,7 @@ public class MovieRatingsApp extends Application {
 
         }
 
-
+        //return list of movies
         return listMovies;
     }
 
@@ -939,9 +955,20 @@ public class MovieRatingsApp extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
 
-        conn = getConnection();
+        //get the connection settings
+    	dbConn = DatabaseSettings.display();
+    	
+    	if(dbConn[0] == null) {
+    		System.exit(0);
+    	}
+    	
+    	//establish connection
+    	conn = getConnection();
+    	
+    	//set application title
         primaryStage.setTitle("MovieRecommender");
 
+        //import icons
         try {
             STAR = new Image(getClass().getResourceAsStream("star.png"));
             EMPTY_STAR = new Image(getClass().getResourceAsStream("empty_star.png"));
@@ -960,7 +987,8 @@ public class MovieRatingsApp extends Application {
         // Top bar
         HBox topBar = new HBox(10);
         topBar.setPadding(new Insets(10, 10, 10, 10));
-
+        
+        //spacer for topbar so that the login fields are to the right
         Pane spacer = new Pane();
         topBar.setHgrow(spacer, Priority.ALWAYS);
         spacer.setMinSize(10, 1);
@@ -968,7 +996,6 @@ public class MovieRatingsApp extends Application {
 
         // Menu bar
         MenuBar menuBar = new MenuBar();
-
         Menu mainMenu = new Menu("Menu");
 
         MenuItem profile = new MenuItem("Edit Profile");
@@ -1011,30 +1038,34 @@ public class MovieRatingsApp extends Application {
         HBox searchBar = new HBox(10);
         searchBar.setAlignment(Pos.CENTER);
         searchBar.setPadding(new Insets(0, 10, 10, 10));
-
+        //search field
         TextField searchField = new TextField();
         searchField.setPromptText("Search");
         searchField.setPrefWidth(700);
-
+        
+        //search options
         ComboBox<String> searchOptions =
             new ComboBox<String>(FXCollections.observableArrayList(searches));
         searchOptions.setValue(searches[0]);
         searchOptions.setMinWidth(90);
 
+        //search button
         Button searchBtn = new Button();
         searchBtn.setText("Search");
         searchBtn.setMinWidth(70);
         
+        //favorites button
         Button searchfavBtn = new Button();
         searchfavBtn.setText("Search Favorites");
         searchfavBtn.setMinWidth(90);
         searchfavBtn.setVisible(loggedIn);
-
+        
+        //add all search elements to the search bar
         searchBar.getChildren().addAll(searchField, searchOptions, searchBtn, searchfavBtn);
 
         // scrollable grid
-        
         movieTable.setEditable(false);
+        //add columns for movie title, release year, director name, and actors
         TableColumn<Movie, String> mtitle = new TableColumn<Movie, String>("Title");
         mtitle.setMinWidth(400);
         TableColumn<Movie, Integer> myear = new TableColumn<Movie, Integer>("Year");
@@ -1050,20 +1081,17 @@ public class MovieRatingsApp extends Application {
         director.setCellValueFactory(new PropertyValueFactory<Movie, String>("movieDir"));
         actors.setCellValueFactory(new PropertyValueFactory<Movie, ArrayList<String>>("movieAct"));
 
+        //get random movies to populate grid
         movieData = getRandMovies();
-
+        //add movies to grid
         movieTable.setItems(movieData);
+        //set the columns in grid
         movieTable.getColumns().addAll(mtitle, myear, director, actors);
 
-        // report
-        /**
-        ScrollPane movieReportScroll = new ScrollPane();
-        movieReportScroll.setMinHeight(325);
-        */
-
+        //Report
         VBox movieReport = new VBox();
 
-
+        //set update the reprot when user clicks on a row
         movieTable.setOnMouseClicked((MouseEvent event) -> {
             if (event.getClickCount() > 0) {
                 if (movieTable.getSelectionModel().getSelectedItem() != null) {
@@ -1079,7 +1107,8 @@ public class MovieRatingsApp extends Application {
             selectedMovie = movieTable.getSelectionModel().getSelectedItem();
             getReport(selectedMovie, movieReport);
         }
-
+        
+        //add all of the elementst to the parent vbox
         parentVbox.getChildren().addAll(topBar, searchBar, movieTable, movieReport);
 
         // button action
@@ -1152,16 +1181,20 @@ public class MovieRatingsApp extends Application {
         // create user button action
         createBtn.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
+            	//launch create user popup
                 String[] newUserValue = CreateUserPopup.display(conn, false, 0);
-
+                
+                //if we get values from the popup set globals
                 if (newUserValue[0].compareTo("") != 0) {
                     loggedInId = Integer.parseInt(newUserValue[0]);
                     loggedInName = newUserValue[1];
                     loggedIn = true;
                     
+                    //enable the edit profile and logout menu items
                     profile.setDisable(false);
                     logout.setDisable(false);
-
+                    
+                    //create logged in username
                     userLabel.setText("Welcome " + loggedInName);
 
                     // remove the login fields/buttons and show welcome message
@@ -1170,6 +1203,7 @@ public class MovieRatingsApp extends Application {
                     topBar.getChildren().add(userLabel);
                 }
                 
+                //show or hide the search favorite button based on login context
                 searchfavBtn.setVisible(loggedIn);
             }
         });
@@ -1178,7 +1212,10 @@ public class MovieRatingsApp extends Application {
         // edit profile menu button action
         profile.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
+            	//launch edit profile popup
                 String[] updateUserValue = CreateUserPopup.display(conn, true, loggedInId);
+                
+                //if user updates the username, update the username dispaly
                 if (updateUserValue[1].compareTo(loggedInName) != 0) {
                     loggedInName = updateUserValue[1];
                     userLabel.setText("Welcome " + loggedInName);
@@ -1191,26 +1228,40 @@ public class MovieRatingsApp extends Application {
         logout.setOnAction(new EventHandler<ActionEvent>() {
 
             public void handle(ActionEvent event) {
-                loggedIn = false;
+                //set login context
+            	loggedIn = false;
                 loggedInName = "";
                 loggedInId = 0;
-
+                
+                //disable buttons that should only be available to logged in users
                 profile.setDisable(true);
                 logout.setDisable(true);
                 userLabel.setText("");
 
+                //reset the topbar to allow for login/create user
                 topBar.getChildren().remove(userLabel);
                 topBar.getChildren().addAll(userTextField, userPwField, loginBtn, createBtn);
-
+                
+                //reset report so the rating functionality is removed
                 if (movieTable.getSelectionModel().getSelectedItem() != null) {
                     getReport(movieTable.getSelectionModel().getSelectedItem(), movieReport);
-                }
-                
-                else if (selectedMovie != null) {
+                } else if (selectedMovie != null) {
                     getReport(selectedMovie, movieReport);
                 }
                 
+                //show or hide search favorites button based on logged in user
                 searchfavBtn.setVisible(loggedIn);
+                
+                //reset movie list
+                movieTable.setItems(getRandMovies());
+                
+                if (movieTable.getItems().size() > 0) {
+                    movieTable.getSelectionModel().selectFirst();
+                    selectedMovie = movieTable.getSelectionModel().getSelectedItem();
+                    getReport(selectedMovie, movieReport);
+                } else {
+                	getReport(null,movieReport);
+                }
 
             }
         });
@@ -1242,8 +1293,10 @@ public class MovieRatingsApp extends Application {
                 String searchFieldText = searchField.getText();
                 String btnOption = (String) searchOptions.getValue();
                 
+                //run searches
                 switch (btnOption) {
-                    case "Movie":
+                    //search by movie title
+                	case "Movie":
                         query = "{CALL GetByMovie(?)}";
                         try {
                             CallableStatement stmt = conn.prepareCall(query);
@@ -1280,14 +1333,14 @@ public class MovieRatingsApp extends Application {
                             e.printStackTrace();
                         }
                         break;
-
+                    //search for movies by actors name
                     case "Actor":
                         
                         getMoviesByActor(searchFieldText, listMovies, true);
                         
 
                         break;
-
+                    //search for movies by directors name
                     case "Director":
                         query = "{CALL GetByDirector(?)}";
                         try {
@@ -1323,6 +1376,7 @@ public class MovieRatingsApp extends Application {
                             e.printStackTrace();
                         }
                         break;
+                    //search for movies by genre
                     case "Genre":
                     	query = "{CALL GetByGenre(?)}";
                         try {
@@ -1362,13 +1416,17 @@ public class MovieRatingsApp extends Application {
                     default:
                         break;
                 }
+                
+                //set movies list based on search
                 movieTable.setItems(listMovies);
                 
+                //set row selection and report if we have some movies
                 if (movieTable.getItems().size() > 0) {
                     movieTable.getSelectionModel().selectFirst();
                     selectedMovie = movieTable.getSelectionModel().getSelectedItem();
                     getReport(selectedMovie, movieReport);
                 } else {
+                	//set null report if we do not have any rows
                 	getReport(null,movieReport);
                 }
                 
@@ -1376,6 +1434,7 @@ public class MovieRatingsApp extends Application {
             }
         });
         
+        //search by favorites button action
         searchfavBtn.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
             	ObservableList<Movie> listMovies = FXCollections.observableArrayList();
@@ -1392,11 +1451,13 @@ public class MovieRatingsApp extends Application {
                 String query;
                 List<String> actors = new ArrayList<String>();
 
+                //query using stored procedure
                 query = "{CALL GetByFavorites(?)}";
                 try {
                 	CallableStatement stmt = conn.prepareCall(query);
                     stmt.setInt(1, loggedInId);
                     ResultSet rs = stmt.executeQuery();
+                    //set values from queries
                     while (rs.next()) {
                     	mId = rs.getInt("MOV_ID");
                         mName = rs.getString("TITLE");
@@ -1425,14 +1486,17 @@ public class MovieRatingsApp extends Application {
                 } catch (SQLException e) {
                 	e.printStackTrace();
                 }
-
+                
+                //add movies to grid
                 movieTable.setItems(listMovies);
                 
+                //if we have rows select the frist row and show report
                 if (movieTable.getItems().size() > 0) {
                     movieTable.getSelectionModel().selectFirst();
                     selectedMovie = movieTable.getSelectionModel().getSelectedItem();
                     getReport(selectedMovie, movieReport);
                 } else {
+                	//if we don't have rows set null report
                 	getReport(null,movieReport);
                 }
                 
